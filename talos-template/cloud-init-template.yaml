@@ -1,0 +1,16 @@
+#cloud-config
+write_files:
+  - path: /var/lib/talos/config.yaml
+    permissions: '0600'
+    encoding: base64
+    content: ${talos_config}
+  - path: /usr/local/bin/apply-talos-config.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      if [ -f /var/lib/talos/config.yaml ]; then
+        talos apply-config --insecure --nodes 127.0.0.1 --file /var/lib/talos/config.yaml
+      fi
+
+runcmd:
+  - /usr/local/bin/apply-talos-config.sh
