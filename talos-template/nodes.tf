@@ -1,36 +1,73 @@
-# Random VM IDs for control plane nodes
-resource "random_integer" "controlplane_vm_id" {
-  count = var.controlplane_count
-  min   = var.controlplane_vm_id_min
-  max   = var.controlplane_vm_id_max
+# Node configuration
+locals {
+  node_configs = {
+    controlplane = {
+      count        = var.controlplane_count
+      name_prefix  = "talos-cp"
+      vm_id_min    = var.controlplane_vm_id_min
+      vm_id_max    = var.controlplane_vm_id_max
+      ip_start     = var.controlplane_ip_start
+      template_key = "controlplane"
+    }
+    worker = {
+      count        = var.worker_count
+      name_prefix  = "talos-worker"
+      vm_id_min    = var.worker_vm_id_min
+      vm_id_max    = var.worker_vm_id_max
+      ip_start     = var.worker_ip_start
+      template_key = "worker"
+    }
+  }
+
+  # Flatten node configurations for iteration
+  nodes = flatten([
+    for node_type, config in local.node_configs : [
+      for i in range(config.count) : {
+        key          = "${node_type}-${i}"
+        type         = node_type
+        name_prefix  = config.name_prefix
+        vm_id_min    = config.vm_id_min
+        vm_id_max    = config.vm_id_max
+        ip_start     = config.ip_start
+        template_key = config.template_key
+        index        = i
+      }
+    ] if config.count > 0
+  ])
+}
+
+# Random VM IDs for all nodes
+resource "random_integer" "node_vm_id" {
+  for_each = { for node in local.nodes : node.key => node }
+  min      = each.value.vm_id_min
+  max      = each.value.vm_id_max
 
   keepers = {
     # Only regenerate VM ID when template changes
-    template_id = proxmox_virtual_environment_vm.template["controlplane"].id
+    template_id = proxmox_virtual_environment_vm.template[each.value.template_key].id
   }
 }
 
-# Control plane nodes
-resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
-  count     = var.controlplane_count
-  name      = "talos-cp-${random_integer.controlplane_vm_id[count.index].result}"
+# All nodes (controlplane and worker)
+resource "proxmox_virtual_environment_vm" "nodes" {
+  for_each  = { for node in local.nodes : node.key => node }
+  name      = "${each.value.name_prefix}-${random_integer.node_vm_id[each.key].result}"
   node_name = var.node_name
-  vm_id     = random_integer.controlplane_vm_id[count.index].result
+  vm_id     = random_integer.node_vm_id[each.key].result
 
   clone {
-    vm_id = proxmox_virtual_environment_vm.template["controlplane"].vm_id
+    vm_id = proxmox_virtual_environment_vm.template[each.value.template_key].vm_id
     full  = true
   }
 
   initialization {
     datastore_id = var.vm_datastore_id
 
-
     dynamic "ip_config" {
       for_each = var.enable_dhcp ? [] : [1]
       content {
         ipv4 {
-          address = "${cidrhost(var.network_cidr, var.controlplane_ip_start + count.index)}/${local.network_mask}"
+          address = "${cidrhost(var.network_cidr, each.value.ip_start + each.value.index)}/${local.network_mask}"
           gateway = var.network_gateway
         }
       }
@@ -43,63 +80,9 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
 
   lifecycle {
     create_before_destroy = false
-    ignore_changes        = [name, vm_id]
   }
 
   depends_on = [
-    proxmox_virtual_environment_vm.template["controlplane"]
-  ]
-}
-
-# Random VM IDs for worker nodes
-resource "random_integer" "worker_vm_id" {
-  count = var.worker_count
-  min   = var.worker_vm_id_min
-  max   = var.worker_vm_id_max
-
-  keepers = {
-    # Only regenerate VM ID when template changes
-    template_id = proxmox_virtual_environment_vm.template["worker"].id
-  }
-}
-
-# Worker nodes
-resource "proxmox_virtual_environment_vm" "worker_nodes" {
-  count     = var.worker_count
-  name      = "talos-worker-${random_integer.worker_vm_id[count.index].result}"
-  node_name = var.node_name
-  vm_id     = random_integer.worker_vm_id[count.index].result
-
-  clone {
-    vm_id = proxmox_virtual_environment_vm.template["worker"].vm_id
-    full  = true
-  }
-
-  initialization {
-    datastore_id = var.vm_datastore_id
-
-
-    dynamic "ip_config" {
-      for_each = var.enable_dhcp ? [] : [1]
-      content {
-        ipv4 {
-          address = "${cidrhost(var.network_cidr, var.worker_ip_start + count.index)}/${local.network_mask}"
-          gateway = var.network_gateway
-        }
-      }
-    }
-
-    dns {
-      servers = var.dns_servers
-    }
-  }
-
-  lifecycle {
-    create_before_destroy = false
-    ignore_changes        = [name, vm_id]
-  }
-
-  depends_on = [
-    proxmox_virtual_environment_vm.template["worker"]
+    proxmox_virtual_environment_vm.template
   ]
 }
