@@ -10,7 +10,7 @@ resource "proxmox_virtual_environment_file" "controlplane_node_cloud_init" {
       talos_config = base64encode(data.talos_machine_configuration.controlplane_nodes[count.index].machine_configuration)
     })
     
-    file_name = "talos-cp-${count.index + 1}-cloud-init.yaml"
+    file_name = "talos-cp-${random_integer.controlplane_vm_id[count.index].result}-cloud-init.yaml"
   }
   
   lifecycle {
