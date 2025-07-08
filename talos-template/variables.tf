@@ -1,15 +1,39 @@
 variable "proxmox_endpoint" {
-  type = string
+  type    = string
   default = "https://your-proxmox:8006/"
 }
 
 variable "proxmox_insecure" {
-  type = bool
+  type    = bool
   default = true
 }
 
+variable "proxmox_api_token" {
+  description = "Proxmox API token in format 'user@realm!tokenname=token-secret'"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_ssh_agent" {
+  description = "Use SSH agent for Proxmox SSH connection"
+  type        = bool
+  default     = true
+}
+
+variable "proxmox_ssh_username" {
+  description = "SSH username for Proxmox connection"
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_private_key_path" {
+  description = "Path to SSH private key for Proxmox connection"
+  type        = string
+  default     = "~/.ssh/id_rsa"
+}
+
 variable "talos_version" {
-  type = string
+  type    = string
   default = "v1.10.5"
 }
 
@@ -21,7 +45,7 @@ variable "talos_disk_image_datastore_id" {
 
 variable "template_datastore_id" {
   description = "Datastore for VM template disks"
-  type        = string 
+  type        = string
   default     = "local-lvm"
 }
 
@@ -38,7 +62,7 @@ variable "vm_datastore_id" {
 }
 
 variable "node_name" {
-  type = string
+  type    = string
   default = "pve"
 }
 

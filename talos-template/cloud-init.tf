@@ -3,12 +3,12 @@ resource "proxmox_virtual_environment_file" "controlplane_cloud_init" {
   content_type = "snippets"
   datastore_id = var.snippets_datastore_id
   node_name    = var.node_name
-  
+
   source_raw {
     data = templatefile("${path.module}/cloud-init-template.yaml", {
       talos_config = base64encode(data.talos_machine_configuration.controlplane.machine_configuration)
     })
-    
+
     file_name = "talos-controlplane-cloud-init-${var.talos_version}.yaml"
   }
 }
@@ -17,12 +17,12 @@ resource "proxmox_virtual_environment_file" "worker_cloud_init" {
   content_type = "snippets"
   datastore_id = var.snippets_datastore_id
   node_name    = var.node_name
-  
+
   source_raw {
     data = templatefile("${path.module}/cloud-init-template.yaml", {
       talos_config = base64encode(data.talos_machine_configuration.worker.machine_configuration)
     })
-    
+
     file_name = "talos-worker-cloud-init-${var.talos_version}.yaml"
   }
 }
@@ -33,15 +33,15 @@ resource "proxmox_virtual_environment_file" "controlplane_node_cloud_init" {
   content_type = "snippets"
   datastore_id = var.snippets_datastore_id
   node_name    = var.node_name
-  
+
   source_raw {
     data = templatefile("${path.module}/cloud-init-template.yaml", {
       talos_config = base64encode(data.talos_machine_configuration.controlplane.machine_configuration)
     })
-    
+
     file_name = "talos-cp-${count.index + 1}-cloud-init.yaml"
   }
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -52,15 +52,15 @@ resource "proxmox_virtual_environment_file" "worker_node_cloud_init" {
   content_type = "snippets"
   datastore_id = var.snippets_datastore_id
   node_name    = var.node_name
-  
+
   source_raw {
     data = templatefile("${path.module}/cloud-init-template.yaml", {
       talos_config = base64encode(data.talos_machine_configuration.worker.machine_configuration)
     })
-    
+
     file_name = "talos-worker-${count.index + 1}-cloud-init.yaml"
   }
-  
+
   lifecycle {
     create_before_destroy = true
   }

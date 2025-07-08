@@ -21,7 +21,7 @@ resource "talos_image_factory_schematic" "this" {
 }
 
 resource "proxmox_virtual_environment_download_file" "talos_image" {
-  content_type = "import"
+  content_type = "iso"
   datastore_id = var.talos_disk_image_datastore_id
   node_name    = var.node_name
   file_name    = local.talos_image_filename
@@ -86,7 +86,7 @@ resource "talos_machine_bootstrap" "this" {
   depends_on = [
     proxmox_virtual_environment_vm.controlplane_nodes
   ]
-  
+
   client_configuration = talos_machine_secrets.this.client_configuration
   endpoint             = cidrhost(var.network_cidr, var.controlplane_ip_start)
   node                 = cidrhost(var.network_cidr, var.controlplane_ip_start)
@@ -97,7 +97,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
   depends_on = [
     proxmox_virtual_environment_vm.controlplane_nodes
   ]
-  
+
   count                       = var.controlplane_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
@@ -111,7 +111,7 @@ resource "talos_machine_configuration_apply" "worker" {
     proxmox_virtual_environment_vm.worker_nodes,
     talos_machine_bootstrap.this
   ]
-  
+
   count                       = var.worker_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration

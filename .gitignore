@@ -1,0 +1,50 @@
+# Terraform / OpenTofu
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!*.auto.tfvars
+crash.log
+crash.*.log
+*.tfplan
+*.tfout
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Talos
+talosconfig
+.talos/
+*.yaml.enc
+
+# Kubernetes
+kubeconfig
+.kube/
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.backup
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
