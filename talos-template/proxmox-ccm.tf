@@ -1,17 +1,17 @@
 # Proxmox Cloud Controller Manager setup
 resource "proxmox_virtual_environment_role" "ccm" {
   role_id = var.proxmox_ccm_role
-  
+
   privileges = [
     "VM.Audit"
   ]
 }
 
 resource "proxmox_virtual_environment_user" "ccm" {
-  comment  = "Talos Cloud Controller Manager service account"
-  user_id  = var.proxmox_ccm_user
-  enabled  = true
-  
+  comment = "Talos Cloud Controller Manager service account"
+  user_id = var.proxmox_ccm_user
+  enabled = true
+
   acl {
     path      = "/"
     propagate = true
