@@ -47,7 +47,7 @@ data "talos_machine_configuration" "controlplane" {
           interfaces = [
             merge(
               {
-                interface = "eth0"
+                interface = var.network_interface
                 dhcp      = var.enable_dhcp
               },
               var.enable_vip ? {
@@ -103,7 +103,7 @@ data "talos_machine_configuration" "worker" {
         network = {
           interfaces = [
             {
-              interface = "eth0"
+              interface = var.network_interface
               dhcp      = var.enable_dhcp
             }
           ]
@@ -120,8 +120,8 @@ resource "talos_machine_bootstrap" "this" {
   ]
 
   client_configuration = talos_machine_secrets.this.client_configuration
-  endpoint             = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
-  node                 = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
+  endpoint             = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, var.network_interface)][0]
+  node                 = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, var.network_interface)][0]
 }
 
 # Apply configuration to all controlplane nodes
@@ -133,8 +133,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
   count                       = var.controlplane_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
-  node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
+  endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, var.network_interface)][0]
+  node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, var.network_interface)][0]
 
   config_patches = [
     yamlencode({
@@ -159,8 +159,8 @@ resource "talos_machine_configuration_apply" "worker" {
   count                       = var.worker_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
-  node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
+  endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, var.network_interface)][0]
+  node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, var.network_interface)][0]
 
   config_patches = [
     yamlencode({
