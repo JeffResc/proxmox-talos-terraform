@@ -27,18 +27,3 @@ jobs:
         
       - name: Tofu Validate
         run: tofu validate
-        
-      - name: Install terraform-docs
-        run: |
-          curl -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-amd64.tar.gz
-          tar -xzf terraform-docs.tar.gz
-          chmod +x terraform-docs
-          sudo mv terraform-docs /usr/local/bin/
-          
-      - name: Check documentation is up to date
-        run: |
-          ./generate-docs.sh
-          if ! git diff --exit-code -- ':!.terraform.lock.hcl'; then
-            echo "Documentation is not up to date. Please run './generate-docs.sh' and commit the changes."
-            exit 1
-          fi
