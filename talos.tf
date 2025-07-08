@@ -83,7 +83,7 @@ data "talos_machine_configuration" "controlplane" {
         externalCloudProvider = {
           enabled = true
           manifests = [
-            "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager-talos.yml"
+            "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager-talos.yml" # renovate: datasource=github-tags depName=sergelogvinov/proxmox-cloud-controller-manager
           ]
         }
       }
