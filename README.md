@@ -86,22 +86,22 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_download_file) | resource |
-| [proxmox_virtual_environment_role.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_role) | resource |
-| [proxmox_virtual_environment_user.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_user) | resource |
-| [proxmox_virtual_environment_user_token.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_user_token) | resource |
-| [proxmox_virtual_environment_vm.nodes](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
-| [proxmox_virtual_environment_vm.template](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
-| [random_integer.node_vm_id](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
-| [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/cluster_kubeconfig) | resource |
-| [talos_image_factory_schematic.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/image_factory_schematic) | resource |
-| [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_bootstrap) | resource |
-| [talos_machine_configuration_apply.controlplane](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_configuration_apply) | resource |
-| [talos_machine_configuration_apply.worker](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_configuration_apply) | resource |
-| [talos_machine_secrets.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_secrets) | resource |
-| [talos_image_factory_extensions_versions.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/image_factory_extensions_versions) | data source |
-| [talos_machine_configuration.controlplane](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/machine_configuration) | data source |
-| [talos_machine_configuration.worker](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/machine_configuration) | data source |
+| proxmox_virtual_environment_download_file.talos_image | resource |
+| proxmox_virtual_environment_role.ccm | resource |
+| proxmox_virtual_environment_user.ccm | resource |
+| proxmox_virtual_environment_user_token.ccm | resource |
+| proxmox_virtual_environment_vm.nodes | resource |
+| proxmox_virtual_environment_vm.template | resource |
+| random_integer.node_vm_id | resource |
+| talos_cluster_kubeconfig.this | resource |
+| talos_image_factory_schematic.this | resource |
+| talos_machine_bootstrap.this | resource |
+| talos_machine_configuration_apply.controlplane | resource |
+| talos_machine_configuration_apply.worker | resource |
+| talos_machine_secrets.this | resource |
+| talos_image_factory_extensions_versions.this | data source |
+| talos_machine_configuration.controlplane | data source |
+| talos_machine_configuration.worker | data source |
 
 ### Inputs
 
