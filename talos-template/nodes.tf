@@ -24,7 +24,6 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   initialization {
     datastore_id = var.vm_datastore_id
     
-    user_data_file_id = proxmox_virtual_environment_file.controlplane_node_cloud_init[count.index].id
     
     dynamic "ip_config" {
       for_each = var.enable_dhcp ? [] : [1]
@@ -50,8 +49,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   }
   
   depends_on = [
-    proxmox_virtual_environment_vm.controlplane_template,
-    proxmox_virtual_environment_file.controlplane_node_cloud_init
+    proxmox_virtual_environment_vm.controlplane_template
   ]
 }
 
@@ -81,7 +79,6 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   initialization {
     datastore_id = var.vm_datastore_id
     
-    user_data_file_id = proxmox_virtual_environment_file.worker_node_cloud_init[count.index].id
     
     dynamic "ip_config" {
       for_each = var.enable_dhcp ? [] : [1]
@@ -107,7 +104,6 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   }
   
   depends_on = [
-    proxmox_virtual_environment_vm.worker_template,
-    proxmox_virtual_environment_file.worker_node_cloud_init
+    proxmox_virtual_environment_vm.worker_template
   ]
 }

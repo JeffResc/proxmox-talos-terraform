@@ -11,7 +11,6 @@ locals {
   # Disk sizes
   controlplane_disk_size = 20
   worker_disk_size       = 50
-  cloudinit_disk_size    = 4
   
   # Memory configurations (in MB)
   controlplane_memory = 4096
