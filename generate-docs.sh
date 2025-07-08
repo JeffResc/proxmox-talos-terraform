@@ -30,11 +30,11 @@ for module_dir in "$SCRIPT_DIR/modules"/*; do
         terraform-docs -c "$SCRIPT_DIR/.terraform-docs.yml" "$module_dir"
 
         # Post-process the module README to convert ## headers to ### within the terraform-docs section
-        perl -i -pe '
-            if (/<!-- BEGIN_TF_DOCS -->/ .. /<!-- END_TF_DOCS -->/) {
-                s/^## /### /;
-            }
-        ' "$module_dir/README.md"
+        # perl -i -pe '
+        #     if (/<!-- BEGIN_TF_DOCS -->/ .. /<!-- END_TF_DOCS -->/) {
+        #         s/^## /### /;
+        #     }
+        # ' "$module_dir/README.md"
     fi
 done
 

@@ -1,24 +1,15 @@
-# Root-level variables for values that need to be shared across modules
-# or have no reasonable defaults
-
-#######################################
-# Proxmox Connection Configuration
-#######################################
 variable "proxmox_config" {
   description = "Proxmox connection and infrastructure configuration"
   type = object({
-    # Connection settings
     endpoint  = string
     api_token = string
     insecure  = optional(bool, false)
 
-    # Infrastructure settings
     node_name                     = optional(string, "pve")
     talos_disk_image_datastore_id = optional(string, "local")
     template_datastore_id         = optional(string, "local-lvm")
     vm_datastore_id               = optional(string, "local-lvm")
 
-    # DNS settings
     dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
   })
   sensitive = true
@@ -28,9 +19,6 @@ variable "proxmox_config" {
   }
 }
 
-#######################################
-# Network Configuration
-#######################################
 variable "network_config" {
   description = "Network configuration for Talos nodes"
   type = object({
@@ -45,9 +33,6 @@ variable "network_config" {
   }
 }
 
-#######################################
-# Cluster Configuration
-#######################################
 variable "cluster_config" {
   description = "Cluster configuration settings"
   type = object({
@@ -92,12 +77,6 @@ variable "cluster_config" {
   }
 }
 
-# Note: Individual Proxmox infrastructure variables have been moved into proxmox_config
-# for better organization and grouping of related settings
-
-#######################################
-# Node Configuration
-#######################################
 variable "node_config" {
   description = "Node configuration for the cluster"
   type = object({

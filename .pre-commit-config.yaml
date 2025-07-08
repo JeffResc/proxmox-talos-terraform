@@ -40,14 +40,14 @@ repos:
           - --args=-json
           - --args=-no-color
           - --hook-config=--tf-path=tofu
-  - repo: local
-    hooks:
-      - id: terraform-docs-with-header-conversion
-        name: Terraform docs with header conversion
-        entry: bash -c 'terraform-docs . && perl -i -pe "if (/<!-- BEGIN_TF_DOCS -->/ .. /<!-- END_TF_DOCS -->/) { s/^## /### /; }" README.md'
-        language: system
-        files: \.tf$
-        pass_filenames: false
+  # - repo: local
+  #   hooks:
+  #     - id: terraform-docs-with-header-conversion
+  #       name: Terraform docs with header conversion
+  #       entry: bash -c 'terraform-docs --recursive . && perl -i -pe "if (/<!-- BEGIN_TF_DOCS -->/ .. /<!-- END_TF_DOCS -->/) { s/^## /### /; }" README.md'
+  #       language: system
+  #       files: \.tf$
+  #       pass_filenames: false
   # - repo: https://github.com/renovatebot/pre-commit-hooks
   #   rev: 41.17.2
   #   hooks:
