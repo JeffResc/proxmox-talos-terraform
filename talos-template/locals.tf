@@ -29,6 +29,6 @@ locals {
   talos_image_filename = "talos-${var.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
 
   # Template names
-  controlplane_template_name = "talos-controlplane-${var.talos_version}"
-  worker_template_name       = "talos-worker-${var.talos_version}"
+  controlplane_template_name = "talos-cp-${var.talos_version}"
+  worker_template_name       = "talos-wrkr-${var.talos_version}"
 }
