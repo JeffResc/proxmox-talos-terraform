@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(tofu fmt:*)",
+      "Bash(tofu validate:*)"
+    ],
+    "deny": []
+  }
+}

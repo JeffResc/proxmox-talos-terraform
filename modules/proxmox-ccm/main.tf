@@ -1,15 +1,13 @@
 # Proxmox Cloud Controller Manager setup
 resource "proxmox_virtual_environment_role" "ccm" {
-  role_id = var.proxmox_ccm_role
+  role_id = var.ccm_config.role
 
-  privileges = [
-    "VM.Audit"
-  ]
+  privileges = var.ccm_config.privileges
 }
 
 resource "proxmox_virtual_environment_user" "ccm" {
   comment = "Talos Cloud Controller Manager service account"
-  user_id = var.proxmox_ccm_user
+  user_id = var.ccm_config.user
   enabled = true
 
   acl {
@@ -21,7 +19,7 @@ resource "proxmox_virtual_environment_user" "ccm" {
 
 resource "proxmox_virtual_environment_user_token" "ccm" {
   comment               = "Talos CCM API token"
-  token_name            = "ccm-token"
+  token_name            = var.ccm_config.token_name
   user_id               = proxmox_virtual_environment_user.ccm.user_id
   privileges_separation = false
 }

@@ -9,10 +9,21 @@ proxmox_config = {
   vm_datastore_id               = "local-lvm"
 
   dns_servers = [
-    "192.168.1.1",
     "1.1.1.1",
-    "8.8.8.8"
+    "1.0.0.1",
+    "8.8.8.8",
+    "8.8.4.4"
   ]
+
+  ccm_config = {
+    enabled = true
+    user    = "talos-ccm@pve"
+    role    = "TalosCCM"
+    token_name = "ccm-token"
+    privileges = [
+      "VM.Audit"
+    ]
+  }
 }
 
 network_config = {
@@ -37,4 +48,48 @@ node_config = {
   worker_count          = 3
   controlplane_ip_start = 10
   worker_ip_start       = 20
+}
+
+# Node distribution across Proxmox nodes
+node_distribution = {
+  "pve" = {
+    controlplane_count = 3
+    worker_count       = 3
+  }
+}
+
+# VM template configuration
+template_config = {
+  controlplane_id = 998
+  worker_id       = 999
+  node            = "pve"
+}
+
+# VM resource allocation
+resource_config = {
+  controlplane = {
+    memory    = 4096
+    cpu_cores = 4
+    disk_size = 20
+  }
+  worker = {
+    memory    = 8192
+    cpu_cores = 8
+    disk_size = 50
+  }
+  cpu_type = "x86-64-v2-AES"
+}
+
+# VM ID ranges
+vm_id_ranges = {
+  controlplane_min = 2000
+  controlplane_max = 2999
+  worker_min       = 3000
+  worker_max       = 3999
+}
+
+# Tagging configuration
+tagging_config = {
+  common = ["talos", "terraform"]
+  extra  = ["production"]
 }

@@ -84,6 +84,6 @@ output "talos_cluster_kubeconfig" {
 
 output "proxmox_ccm_token" {
   description = "Proxmox Cloud Controller Manager API token"
-  value       = module.proxmox_ccm.ccm_token.value
+  value       = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token.value : null
   sensitive   = true
 }

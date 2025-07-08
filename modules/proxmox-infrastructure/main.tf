@@ -122,7 +122,7 @@ locals {
   all_nodes = concat(local.nodes, local.worker_nodes)
 
   # Network configuration
-  network_mask = split("/", var.network_cidr)[1]
+  network_mask = var.enable_dhcp || var.network_cidr == null || var.network_cidr == "" ? null : split("/", var.network_cidr)[1]
 }
 
 # Random VM IDs for all nodes
