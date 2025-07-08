@@ -174,6 +174,52 @@ variable "enable_vip" {
   default     = true
 }
 
+variable "controlplane_memory" {
+  description = "Memory for control plane nodes in MB"
+  type        = number
+  default     = 4096
+  validation {
+    condition     = var.controlplane_memory >= 2048
+    error_message = "Control plane memory must be at least 2048 MB."
+  }
+}
+
+variable "worker_memory" {
+  description = "Memory for worker nodes in MB"
+  type        = number
+  default     = 8192
+  validation {
+    condition     = var.worker_memory >= 2048
+    error_message = "Worker memory must be at least 2048 MB."
+  }
+}
+
+variable "controlplane_cpu_cores" {
+  description = "Number of CPU cores for control plane nodes"
+  type        = number
+  default     = 4
+  validation {
+    condition     = var.controlplane_cpu_cores >= 2
+    error_message = "Control plane CPU cores must be at least 2."
+  }
+}
+
+variable "worker_cpu_cores" {
+  description = "Number of CPU cores for worker nodes"
+  type        = number
+  default     = 8
+  validation {
+    condition     = var.worker_cpu_cores >= 2
+    error_message = "Worker CPU cores must be at least 2."
+  }
+}
+
+variable "cpu_type" {
+  description = "CPU type for VMs"
+  type        = string
+  default     = "x86-64-v2-AES"
+}
+
 variable "network_interface" {
   description = "Network interface name for node network configuration"
   type        = string
