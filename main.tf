@@ -24,8 +24,8 @@ module "talos_bootstrap" {
   enable_dhcp               = var.enable_dhcp
 
   # Proxmox configuration
-  proxmox_endpoint  = var.proxmox_endpoint
-  proxmox_insecure  = var.proxmox_insecure
+  proxmox_endpoint = var.proxmox_endpoint
+  proxmox_insecure = var.proxmox_insecure
 
   # Values from other modules
   ccm_token_id                = module.proxmox_ccm.ccm_token_id
@@ -46,19 +46,19 @@ module "proxmox_infrastructure" {
   talos_version = var.talos_version
 
   # Network configuration
-  network_cidr            = var.network_cidr
-  network_gateway         = var.network_gateway
-  network_interface       = var.network_interface
-  network_bridge          = var.network_bridge
-  enable_dhcp             = var.enable_dhcp
-  dns_servers             = var.dns_servers
-  controlplane_ip_start   = var.controlplane_ip_start
-  worker_ip_start         = var.worker_ip_start
+  network_cidr          = var.network_cidr
+  network_gateway       = var.network_gateway
+  network_interface     = var.network_interface
+  network_bridge        = var.network_bridge
+  enable_dhcp           = var.enable_dhcp
+  dns_servers           = var.dns_servers
+  controlplane_ip_start = var.controlplane_ip_start
+  worker_ip_start       = var.worker_ip_start
 
   # Infrastructure configuration
-  node_distribution    = var.node_distribution
-  template_node        = var.template_node
-  image_download_node  = var.image_download_node
+  node_distribution   = var.node_distribution
+  template_node       = var.template_node
+  image_download_node = var.image_download_node
 
   # Datastore configuration
   talos_disk_image_datastore_id = var.talos_disk_image_datastore_id
