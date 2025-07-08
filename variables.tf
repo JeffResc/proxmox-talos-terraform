@@ -74,7 +74,7 @@ variable "cluster_endpoint" {
 
 
 variable "network_cidr" {
-  description = "Network CIDR for node IP addresses"
+  description = "Network CIDR for node IP addresses (ignored when enable_dhcp is true)"
   type        = string
   default     = "192.168.0.0/24"
   validation {
@@ -84,13 +84,13 @@ variable "network_cidr" {
 }
 
 variable "network_gateway" {
-  description = "Network gateway IP address"
+  description = "Network gateway IP address (ignored when enable_dhcp is true)"
   type        = string
   default     = "192.168.0.1"
 }
 
 variable "controlplane_ip_start" {
-  description = "Starting IP address for control plane nodes (last octet)"
+  description = "Starting IP address for control plane nodes (last octet) (ignored when enable_dhcp is true)"
   type        = number
   default     = 50
   validation {
@@ -100,7 +100,7 @@ variable "controlplane_ip_start" {
 }
 
 variable "worker_ip_start" {
-  description = "Starting IP address for worker nodes (last octet)"
+  description = "Starting IP address for worker nodes (last octet) (ignored when enable_dhcp is true)"
   type        = number
   default     = 70
   validation {
@@ -110,7 +110,7 @@ variable "worker_ip_start" {
 }
 
 variable "dns_servers" {
-  description = "List of DNS servers for Talos nodes"
+  description = "List of DNS servers for Talos nodes (applied regardless of enable_dhcp setting)"
   type        = list(string)
   default     = ["192.168.0.1", "1.1.1.1", "1.0.0.1"]
 }
@@ -168,7 +168,7 @@ variable "worker_vm_id_max" {
 }
 
 variable "enable_dhcp" {
-  description = "Enable DHCP for node network interfaces"
+  description = "Enable DHCP for node network interfaces. When true, static IP variables (network_cidr, network_gateway, controlplane_ip_start, worker_ip_start) are ignored"
   type        = bool
   default     = false
 }

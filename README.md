@@ -112,20 +112,20 @@ No modules.
 | <a name="input_common_tags"></a> [common\_tags](#input\_common\_tags) | Common tags to apply to all resources | `list(string)` | <pre>[<br/>  "talos",<br/>  "terraform"<br/>]</pre> | no |
 | <a name="input_controlplane_cpu_cores"></a> [controlplane\_cpu\_cores](#input\_controlplane\_cpu\_cores) | Number of CPU cores for control plane nodes | `number` | `4` | no |
 | <a name="input_controlplane_disk_size"></a> [controlplane\_disk\_size](#input\_controlplane\_disk\_size) | Disk size for control plane nodes in GB | `number` | `20` | no |
-| <a name="input_controlplane_ip_start"></a> [controlplane\_ip\_start](#input\_controlplane\_ip\_start) | Starting IP address for control plane nodes (last octet) | `number` | `50` | no |
+| <a name="input_controlplane_ip_start"></a> [controlplane\_ip\_start](#input\_controlplane\_ip\_start) | Starting IP address for control plane nodes (last octet) (ignored when enable\_dhcp is true) | `number` | `50` | no |
 | <a name="input_controlplane_memory"></a> [controlplane\_memory](#input\_controlplane\_memory) | Memory for control plane nodes in MB | `number` | `4096` | no |
 | <a name="input_controlplane_template_id"></a> [controlplane\_template\_id](#input\_controlplane\_template\_id) | VM ID for the control plane template | `number` | `998` | no |
 | <a name="input_controlplane_vm_id_max"></a> [controlplane\_vm\_id\_max](#input\_controlplane\_vm\_id\_max) | Maximum VM ID for control plane nodes | `number` | `2099` | no |
 | <a name="input_controlplane_vm_id_min"></a> [controlplane\_vm\_id\_min](#input\_controlplane\_vm\_id\_min) | Minimum VM ID for control plane nodes | `number` | `2000` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | CPU type for VMs | `string` | `"x86-64-v2-AES"` | no |
-| <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers for Talos nodes | `list(string)` | <pre>[<br/>  "192.168.0.1",<br/>  "1.1.1.1",<br/>  "1.0.0.1"<br/>]</pre> | no |
-| <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces | `bool` | `false` | no |
+| <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers for Talos nodes (applied regardless of enable\_dhcp setting) | `list(string)` | <pre>[<br/>  "192.168.0.1",<br/>  "1.1.1.1",<br/>  "1.0.0.1"<br/>]</pre> | no |
+| <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces. When true, static IP variables (network\_cidr, network\_gateway, controlplane\_ip\_start, worker\_ip\_start) are ignored | `bool` | `false` | no |
 | <a name="input_enable_vip"></a> [enable\_vip](#input\_enable\_vip) | Enable VIP (Virtual IP) for controlplane nodes | `bool` | `true` | no |
 | <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | Extra tags to add to resources | `list(string)` | `[]` | no |
 | <a name="input_image_download_node"></a> [image\_download\_node](#input\_image\_download\_node) | Proxmox node where Talos disk images are downloaded | `string` | `"pve"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Network bridge for VM network interfaces | `string` | `"vmbr0"` | no |
-| <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses | `string` | `"192.168.0.0/24"` | no |
-| <a name="input_network_gateway"></a> [network\_gateway](#input\_network\_gateway) | Network gateway IP address | `string` | `"192.168.0.1"` | no |
+| <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses (ignored when enable\_dhcp is true) | `string` | `"192.168.0.0/24"` | no |
+| <a name="input_network_gateway"></a> [network\_gateway](#input\_network\_gateway) | Network gateway IP address (ignored when enable\_dhcp is true) | `string` | `"192.168.0.1"` | no |
 | <a name="input_network_interface"></a> [network\_interface](#input\_network\_interface) | Network interface name for node network configuration | `string` | `"eth0"` | no |
 | <a name="input_node_distribution"></a> [node\_distribution](#input\_node\_distribution) | Distribution of VMs across Proxmox nodes | <pre>map(object({<br/>    controlplane_count = number<br/>    worker_count       = number<br/>  }))</pre> | <pre>{<br/>  "pve": {<br/>    "controlplane_count": 3,<br/>    "worker_count": 3<br/>  }<br/>}</pre> | no |
 | <a name="input_proxmox_api_token"></a> [proxmox\_api\_token](#input\_proxmox\_api\_token) | Proxmox API token in format 'user@realm!tokenname=token-secret' | `string` | n/a | yes |
@@ -140,7 +140,7 @@ No modules.
 | <a name="input_vm_datastore_id"></a> [vm\_datastore\_id](#input\_vm\_datastore\_id) | Datastore for VM initialization | `string` | `"local-lvm"` | no |
 | <a name="input_worker_cpu_cores"></a> [worker\_cpu\_cores](#input\_worker\_cpu\_cores) | Number of CPU cores for worker nodes | `number` | `8` | no |
 | <a name="input_worker_disk_size"></a> [worker\_disk\_size](#input\_worker\_disk\_size) | Disk size for worker nodes in GB | `number` | `50` | no |
-| <a name="input_worker_ip_start"></a> [worker\_ip\_start](#input\_worker\_ip\_start) | Starting IP address for worker nodes (last octet) | `number` | `70` | no |
+| <a name="input_worker_ip_start"></a> [worker\_ip\_start](#input\_worker\_ip\_start) | Starting IP address for worker nodes (last octet) (ignored when enable\_dhcp is true) | `number` | `70` | no |
 | <a name="input_worker_memory"></a> [worker\_memory](#input\_worker\_memory) | Memory for worker nodes in MB | `number` | `8192` | no |
 | <a name="input_worker_template_id"></a> [worker\_template\_id](#input\_worker\_template\_id) | VM ID for the worker template | `number` | `999` | no |
 | <a name="input_worker_vm_id_max"></a> [worker\_vm\_id\_max](#input\_worker\_vm\_id\_max) | Maximum VM ID for worker nodes | `number` | `2199` | no |
