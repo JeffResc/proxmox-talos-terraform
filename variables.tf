@@ -69,10 +69,34 @@ variable "cluster_name" {
   default     = "talos"
 }
 
-variable "cluster_endpoint" {
-  description = "Cluster endpoint URL"
+variable "cluster_vip_enabled" {
+  description = "Enable VIP (Virtual IP) for cluster endpoint. When true, cluster_vip_ip is used as the cluster endpoint."
+  type        = bool
+  default     = true
+}
+
+variable "cluster_vip_ip" {
+  description = "IP address for the cluster VIP (Virtual IP). Used when cluster_vip_enabled is true."
   type        = string
-  default     = "https://192.168.0.100:6443"
+  default     = "192.168.0.100"
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_vip_ip))
+    error_message = "Cluster VIP IP must be a valid IPv4 address."
+  }
+}
+
+variable "cluster_endpoint_override" {
+  description = "Custom cluster endpoint URL. Only used when cluster_vip_enabled is false. Must include protocol and port."
+  type        = string
+  default     = null
+  validation {
+    condition = var.cluster_endpoint_override == null || can(regex("^https?://", var.cluster_endpoint_override))
+    error_message = "Cluster endpoint override must be a valid URL starting with http:// or https://"
+  }
+  validation {
+    condition = var.cluster_vip_enabled || var.cluster_endpoint_override != null
+    error_message = "cluster_endpoint_override must be provided when cluster_vip_enabled is false"
+  }
 }
 
 variable "network_cidr" {
@@ -173,11 +197,6 @@ variable "enable_dhcp" {
   default     = false
 }
 
-variable "enable_vip" {
-  description = "Enable VIP (Virtual IP) for controlplane nodes"
-  type        = bool
-  default     = true
-}
 
 variable "controlplane_memory" {
   description = "Memory for control plane nodes in MB"
