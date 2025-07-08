@@ -70,6 +70,7 @@ resource "proxmox_virtual_environment_vm" "nodes" {
   name      = "${each.value.name_prefix}-${random_integer.node_vm_id[each.key].result}"
   node_name = each.value.proxmox_node_name
   vm_id     = random_integer.node_vm_id[each.key].result
+  tags      = concat(var.common_tags, [each.value.type])
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template[each.value.template_key].vm_id

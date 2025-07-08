@@ -199,6 +199,12 @@ variable "worker_memory" {
   }
 }
 
+variable "cpu_type" {
+  description = "CPU type for VMs"
+  type        = string
+  default     = "x86-64-v2-AES"
+}
+
 variable "controlplane_cpu_cores" {
   description = "Number of CPU cores for control plane nodes"
   type        = number
@@ -219,16 +225,90 @@ variable "worker_cpu_cores" {
   }
 }
 
-variable "cpu_type" {
-  description = "CPU type for VMs"
-  type        = string
-  default     = "x86-64-v2-AES"
-}
-
 variable "network_interface" {
   description = "Network interface name for node network configuration"
   type        = string
   default     = "eth0"
+}
+
+variable "proxmox_api_token" {
+  description = "Proxmox API token in format 'user@realm!tokenname=token-secret'"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_ssh_agent" {
+  description = "Use SSH agent for Proxmox SSH connection"
+  type        = bool
+  default     = false
+}
+
+variable "proxmox_ssh_username" {
+  description = "SSH username for Proxmox connection"
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_private_key_path" {
+  description = "Path to SSH private key for Proxmox connection"
+  type        = string
+}
+
+
+variable "network_bridge" {
+  description = "Network bridge for VM network interfaces"
+  type        = string
+  default     = "vmbr0"
+}
+
+# VM Template IDs
+variable "controlplane_template_id" {
+  description = "VM ID for the control plane template"
+  type        = number
+  default     = 998
+  validation {
+    condition     = var.controlplane_template_id > 0 && var.controlplane_template_id < 10000
+    error_message = "Control plane template ID must be between 1 and 9999."
+  }
+}
+
+variable "worker_template_id" {
+  description = "VM ID for the worker template"
+  type        = number
+  default     = 999
+  validation {
+    condition     = var.worker_template_id > 0 && var.worker_template_id < 10000
+    error_message = "Worker template ID must be between 1 and 9999."
+  }
+}
+
+
+# Disk Sizes (in GB)
+variable "controlplane_disk_size" {
+  description = "Disk size for control plane nodes in GB"
+  type        = number
+  default     = 20
+  validation {
+    condition     = var.controlplane_disk_size >= 10
+    error_message = "Control plane disk size must be at least 10 GB."
+  }
+}
+
+variable "worker_disk_size" {
+  description = "Disk size for worker nodes in GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.worker_disk_size >= 20
+    error_message = "Worker disk size must be at least 20 GB."
+  }
+}
+
+# Tags
+variable "common_tags" {
+  description = "Common tags to apply to all resources"
+  type        = list(string)
+  default     = ["talos", "terraform"]
 }
 
 variable "template_node" {

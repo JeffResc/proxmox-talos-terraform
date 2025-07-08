@@ -3,19 +3,19 @@ resource "proxmox_virtual_environment_vm" "template" {
   for_each = {
     controlplane = {
       name      = local.controlplane_template_name
-      vm_id     = local.controlplane_template_id
+      vm_id     = var.controlplane_template_id
       tag       = "controlplane"
-      memory    = local.controlplane_memory
-      cpu_cores = local.controlplane_cpu_cores
-      disk_size = local.controlplane_disk_size
+      memory    = var.controlplane_memory
+      cpu_cores = var.controlplane_cpu_cores
+      disk_size = var.controlplane_disk_size
     }
     worker = {
       name      = local.worker_template_name
-      vm_id     = local.worker_template_id
+      vm_id     = var.worker_template_id
       tag       = "worker"
-      memory    = local.worker_memory
-      cpu_cores = local.worker_cpu_cores
-      disk_size = local.worker_disk_size
+      memory    = var.worker_memory
+      cpu_cores = var.worker_cpu_cores
+      disk_size = var.worker_disk_size
     }
   }
 
@@ -23,7 +23,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   node_name = var.template_node
   vm_id     = each.value.vm_id
   template  = true
-  tags      = concat(local.common_tags, [each.value.tag])
+  tags      = concat(var.common_tags, [each.value.tag])
 
   disk {
     datastore_id = var.template_datastore_id
@@ -39,11 +39,11 @@ resource "proxmox_virtual_environment_vm" "template" {
 
   cpu {
     cores = each.value.cpu_cores
-    type  = local.cpu_type
+    type  = var.cpu_type
   }
 
   network_device {
-    bridge = local.network_bridge
+    bridge = var.network_bridge
   }
 
   operating_system {
