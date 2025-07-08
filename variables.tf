@@ -10,7 +10,7 @@ variable "proxmox_insecure" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.10.5"
+  default = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
 }
 
 variable "talos_disk_image_datastore_id" {
