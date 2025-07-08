@@ -3,14 +3,7 @@ resource "proxmox_virtual_environment_role" "ccm" {
   role_id = var.proxmox_ccm_role
   
   privileges = [
-    "VM.Audit",
-    "VM.PowerMgmt",
-    "Datastore.AllocateSpace",
-    "Datastore.AllocateTemplate",
-    "Datastore.Audit",
-    "Sys.Audit",
-    "Sys.Modify",
-    "SDN.Use"
+    "VM.Audit"
   ]
 }
 
