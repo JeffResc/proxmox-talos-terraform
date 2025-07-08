@@ -128,3 +128,43 @@ variable "proxmox_ccm_role" {
   default     = "TalosCCM"
 }
 
+variable "controlplane_vm_id_min" {
+  description = "Minimum VM ID for control plane nodes"
+  type        = number
+  default     = 2000
+  validation {
+    condition     = var.controlplane_vm_id_min > 0 && var.controlplane_vm_id_min < 9999
+    error_message = "Control plane VM ID min must be between 1 and 9998."
+  }
+}
+
+variable "controlplane_vm_id_max" {
+  description = "Maximum VM ID for control plane nodes"
+  type        = number
+  default     = 2099
+  validation {
+    condition     = var.controlplane_vm_id_max > 0 && var.controlplane_vm_id_max < 10000
+    error_message = "Control plane VM ID max must be between 1 and 9999."
+  }
+}
+
+variable "worker_vm_id_min" {
+  description = "Minimum VM ID for worker nodes"
+  type        = number
+  default     = 2100
+  validation {
+    condition     = var.worker_vm_id_min > 0 && var.worker_vm_id_min < 9999
+    error_message = "Worker VM ID min must be between 1 and 9998."
+  }
+}
+
+variable "worker_vm_id_max" {
+  description = "Maximum VM ID for worker nodes"
+  type        = number
+  default     = 2199
+  validation {
+    condition     = var.worker_vm_id_max > 0 && var.worker_vm_id_max < 10000
+    error_message = "Worker VM ID max must be between 1 and 9999."
+  }
+}
+
