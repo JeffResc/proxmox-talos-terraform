@@ -32,12 +32,12 @@ output "talos_image_id" {
 
 output "controlplane_template_id" {
   description = "Control plane template VM ID"
-  value       = proxmox_virtual_environment_vm.controlplane_template.vm_id
+  value       = proxmox_virtual_environment_vm.template["controlplane"].vm_id
 }
 
 output "worker_template_id" {
   description = "Worker template VM ID"
-  value       = proxmox_virtual_environment_vm.worker_template.vm_id
+  value       = proxmox_virtual_environment_vm.template["worker"].vm_id
 }
 
 output "talos_machine_secrets" {

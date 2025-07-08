@@ -6,7 +6,7 @@ resource "random_integer" "controlplane_vm_id" {
   
   keepers = {
     # Only regenerate VM ID when template changes
-    template_id = proxmox_virtual_environment_vm.controlplane_template.id
+    template_id = proxmox_virtual_environment_vm.template["controlplane"].id
   }
 }
 
@@ -18,7 +18,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   vm_id     = random_integer.controlplane_vm_id[count.index].result
   
   clone {
-    vm_id = proxmox_virtual_environment_vm.controlplane_template.vm_id
+    vm_id = proxmox_virtual_environment_vm.template["controlplane"].vm_id
   }
   
   initialization {
@@ -44,13 +44,13 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
     create_before_destroy = true
     ignore_changes = [name, vm_id]
     replace_triggered_by = [
-      proxmox_virtual_environment_vm.controlplane_template.id,
+      proxmox_virtual_environment_vm.template["controlplane"].id,
       proxmox_virtual_environment_download_file.talos_image.id
     ]
   }
   
   depends_on = [
-    proxmox_virtual_environment_vm.controlplane_template
+    proxmox_virtual_environment_vm.template["controlplane"]
   ]
 }
 
@@ -62,7 +62,7 @@ resource "random_integer" "worker_vm_id" {
   
   keepers = {
     # Only regenerate VM ID when template changes
-    template_id = proxmox_virtual_environment_vm.worker_template.id
+    template_id = proxmox_virtual_environment_vm.template["worker"].id
   }
 }
 
@@ -74,7 +74,7 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   vm_id     = random_integer.worker_vm_id[count.index].result
   
   clone {
-    vm_id = proxmox_virtual_environment_vm.worker_template.vm_id
+    vm_id = proxmox_virtual_environment_vm.template["worker"].vm_id
   }
   
   initialization {
@@ -100,12 +100,12 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
     create_before_destroy = true
     ignore_changes = [name, vm_id]
     replace_triggered_by = [
-      proxmox_virtual_environment_vm.worker_template.id,
+      proxmox_virtual_environment_vm.template["worker"].id,
       proxmox_virtual_environment_download_file.talos_image.id
     ]
   }
   
   depends_on = [
-    proxmox_virtual_environment_vm.worker_template
+    proxmox_virtual_environment_vm.template["worker"]
   ]
 }
