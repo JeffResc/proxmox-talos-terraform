@@ -1,3 +1,76 @@
+# Download Talos image
+resource "proxmox_virtual_environment_download_file" "talos_image" {
+  content_type = "import"
+  datastore_id = var.talos_disk_image_datastore_id
+  node_name    = var.image_download_node
+  file_name    = var.talos_image_filename
+  url          = "https://factory.talos.dev/image/${var.schematic_id}/${var.talos_version}/nocloud-amd64.qcow2"
+  overwrite    = true
+}
+
+# VM Templates
+resource "proxmox_virtual_environment_vm" "template" {
+  for_each = {
+    controlplane = {
+      name      = "${var.cluster_name}-ctrl-${var.talos_version}"
+      vm_id     = var.controlplane_template_id
+      tag       = "controlplane"
+      memory    = var.controlplane_memory
+      cpu_cores = var.controlplane_cpu_cores
+      disk_size = var.controlplane_disk_size
+    }
+    worker = {
+      name      = "${var.cluster_name}-node-${var.talos_version}"
+      vm_id     = var.worker_template_id
+      tag       = "worker"
+      memory    = var.worker_memory
+      cpu_cores = var.worker_cpu_cores
+      disk_size = var.worker_disk_size
+    }
+  }
+
+  name      = each.value.name
+  node_name = var.template_node
+  vm_id     = each.value.vm_id
+  template  = true
+  tags      = concat(var.common_tags, var.extra_tags, [each.value.tag])
+
+  disk {
+    datastore_id = var.template_datastore_id
+    file_id      = proxmox_virtual_environment_download_file.talos_image.id
+    interface    = "virtio0"
+    size         = each.value.disk_size
+  }
+
+  memory {
+    dedicated = each.value.memory
+    floating  = each.value.memory
+  }
+
+  cpu {
+    cores = each.value.cpu_cores
+    type  = var.cpu_type
+  }
+
+  network_device {
+    bridge = var.network_bridge
+  }
+
+  operating_system {
+    type = "l26"
+  }
+
+  agent {
+    enabled = true
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_virtual_environment_download_file.talos_image.id
+    ]
+  }
+}
+
 # Node configuration
 locals {
   # Flatten node configurations for iteration across multiple Proxmox nodes
@@ -47,6 +120,9 @@ locals {
 
   # Combine all nodes
   all_nodes = concat(local.nodes, local.worker_nodes)
+
+  # Network configuration
+  network_mask = var.enable_dhcp || var.network_cidr == null || var.network_cidr == "" ? null : split("/", var.network_cidr)[1]
 }
 
 # Random VM IDs for all nodes

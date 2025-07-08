@@ -72,36 +72,19 @@ This project uses [terraform-docs](https://github.com/terraform-docs/terraform-d
 
 ### Providers
 
-| Name | Version |
-|------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.79.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
-| <a name="provider_talos"></a> [talos](#provider\_talos) | 0.8.1 |
+No providers.
 
 ### Modules
 
-No modules.
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_proxmox_ccm"></a> [proxmox\_ccm](#module\_proxmox\_ccm) | ./modules/proxmox-ccm | n/a |
+| <a name="module_proxmox_infrastructure"></a> [proxmox\_infrastructure](#module\_proxmox\_infrastructure) | ./modules/proxmox-infrastructure | n/a |
+| <a name="module_talos_bootstrap"></a> [talos\_bootstrap](#module\_talos\_bootstrap) | ./modules/talos-bootstrap | n/a |
 
 ### Resources
 
-| Name | Type |
-|------|------|
-| proxmox_virtual_environment_download_file.talos_image | resource |
-| proxmox_virtual_environment_role.ccm | resource |
-| proxmox_virtual_environment_user.ccm | resource |
-| proxmox_virtual_environment_user_token.ccm | resource |
-| proxmox_virtual_environment_vm.nodes | resource |
-| proxmox_virtual_environment_vm.template | resource |
-| random_integer.node_vm_id | resource |
-| talos_cluster_kubeconfig.this | resource |
-| talos_image_factory_schematic.this | resource |
-| talos_machine_bootstrap.this | resource |
-| talos_machine_configuration_apply.controlplane | resource |
-| talos_machine_configuration_apply.worker | resource |
-| talos_machine_secrets.this | resource |
-| talos_image_factory_extensions_versions.this | data source |
-| talos_machine_configuration.controlplane | data source |
-| talos_machine_configuration.worker | data source |
+No resources.
 
 ### Inputs
 
@@ -121,12 +104,12 @@ No modules.
 | <a name="input_controlplane_vm_id_min"></a> [controlplane\_vm\_id\_min](#input\_controlplane\_vm\_id\_min) | Minimum VM ID for control plane nodes | `number` | `2000` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | CPU type for VMs | `string` | `"x86-64-v2-AES"` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers for Talos nodes (applied regardless of enable\_dhcp setting) | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "1.0.0.1"<br/>]</pre> | no |
-| <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces. When true, static IP variables (network\_cidr, network\_gateway, controlplane\_ip\_start, worker\_ip\_start) are ignored | `bool` | `false` | no |
+| <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces. When true, network\_cidr and network\_gateway are ignored | `bool` | `false` | no |
 | <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | Extra tags to add to resources | `list(string)` | `[]` | no |
 | <a name="input_image_download_node"></a> [image\_download\_node](#input\_image\_download\_node) | Proxmox node where Talos disk images are downloaded | `string` | `"pve"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Network bridge for VM network interfaces | `string` | `"vmbr0"` | no |
-| <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses (ignored when enable\_dhcp is true) | `string` | n/a | yes |
-| <a name="input_network_gateway"></a> [network\_gateway](#input\_network\_gateway) | Network gateway IP address (ignored when enable\_dhcp is true) | `string` | n/a | yes |
+| <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses (only required when enable\_dhcp is false) | `string` | `null` | no |
+| <a name="input_network_gateway"></a> [network\_gateway](#input\_network\_gateway) | Network gateway IP address (only required when enable\_dhcp is false) | `string` | `null` | no |
 | <a name="input_network_interface"></a> [network\_interface](#input\_network\_interface) | Network interface name for node network configuration | `string` | `"eth0"` | no |
 | <a name="input_node_distribution"></a> [node\_distribution](#input\_node\_distribution) | Distribution of VMs across Proxmox nodes | <pre>map(object({<br/>    controlplane_count = number<br/>    worker_count       = number<br/>  }))</pre> | <pre>{<br/>  "pve": {<br/>    "controlplane_count": 3,<br/>    "worker_count": 3<br/>  }<br/>}</pre> | no |
 | <a name="input_proxmox_api_token"></a> [proxmox\_api\_token](#input\_proxmox\_api\_token) | Proxmox API token in format 'user@realm!tokenname=token-secret' | `string` | n/a | yes |
