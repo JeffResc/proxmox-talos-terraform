@@ -5,7 +5,7 @@ variable "proxmox_endpoint" {
 
 variable "proxmox_insecure" {
   type = bool
-  default = true
+  default = false
 }
 
 variable "talos_version" {
