@@ -168,3 +168,9 @@ variable "worker_vm_id_max" {
   }
 }
 
+variable "enable_dhcp" {
+  description = "Enable DHCP for node network interfaces"
+  type        = bool
+  default     = false
+}
+

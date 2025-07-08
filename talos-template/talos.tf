@@ -47,7 +47,7 @@ data "talos_machine_configuration" "controlplane" {
           interfaces = [
             {
               interface = "eth0"
-              dhcp      = false
+              dhcp      = var.enable_dhcp
               vip = {
                 ip = regex("https?://([^:]+)", var.cluster_endpoint)[0]
               }
@@ -100,7 +100,7 @@ data "talos_machine_configuration" "worker" {
           interfaces = [
             {
               interface = "eth0"
-              dhcp      = false
+              dhcp      = var.enable_dhcp
             }
           ]
         }
