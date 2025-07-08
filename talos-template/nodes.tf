@@ -44,7 +44,8 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
     create_before_destroy = true
     ignore_changes = [name, vm_id]
     replace_triggered_by = [
-      proxmox_virtual_environment_vm.controlplane_template.id
+      proxmox_virtual_environment_vm.controlplane_template.id,
+      proxmox_virtual_environment_download_file.talos_image.id
     ]
   }
   
@@ -99,7 +100,8 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
     create_before_destroy = true
     ignore_changes = [name, vm_id]
     replace_triggered_by = [
-      proxmox_virtual_environment_vm.worker_template.id
+      proxmox_virtual_environment_vm.worker_template.id,
+      proxmox_virtual_environment_download_file.talos_image.id
     ]
   }
   
