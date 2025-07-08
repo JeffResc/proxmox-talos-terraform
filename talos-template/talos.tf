@@ -55,6 +55,34 @@ data "talos_machine_configuration" "controlplane" {
           ]
         }
       }
+      cluster = {
+        inlineManifests = [
+          {
+            name = "proxmox-cloud-controller-manager-config"
+            contents = <<-EOF
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: proxmox-cloud-controller-manager
+                namespace: kube-system
+              stringData:
+                config.yaml: |
+                  clusters:
+                    - url: "${var.proxmox_endpoint}"
+                      insecure: ${var.proxmox_insecure}
+                      token_id: "${proxmox_virtual_environment_user_token.ccm.id}"
+                      token_secret: "${proxmox_virtual_environment_user_token.ccm.value}"
+                      region: "${var.node_name}"
+            EOF
+          }
+        ]
+        externalCloudProvider = {
+          enabled = true
+          manifests = [
+            "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager-talos.yml"
+          ]
+        }
+      }
     })
   ]
 }
