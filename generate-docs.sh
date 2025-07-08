@@ -4,7 +4,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Change to the talos-template directory to run terraform-docs
-cd "$SCRIPT_DIR/talos-template"
+cd "$SCRIPT_DIR"
 
 # Generate terraform docs
 terraform-docs .

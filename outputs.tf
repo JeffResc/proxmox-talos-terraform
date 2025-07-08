@@ -1,22 +1,24 @@
 output "controlplane_nodes" {
   description = "Control plane node information"
   value = {
-    for i in range(var.controlplane_count) : "talos-cp-${i + 1}" => {
-      vm_id      = proxmox_virtual_environment_vm.controlplane_nodes[i].vm_id
-      ip_address = cidrhost(var.network_cidr, var.controlplane_ip_start + i)
-      name       = proxmox_virtual_environment_vm.controlplane_nodes[i].name
+    for k, v in proxmox_virtual_environment_vm.nodes : k => {
+      vm_id      = v.vm_id
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      name       = v.name
     }
+    if startswith(k, "controlplane-")
   }
 }
 
 output "worker_nodes" {
   description = "Worker node information"
   value = {
-    for i in range(var.worker_count) : "talos-worker-${i + 1}" => {
-      vm_id      = proxmox_virtual_environment_vm.worker_nodes[i].vm_id
-      ip_address = cidrhost(var.network_cidr, var.worker_ip_start + i)
-      name       = proxmox_virtual_environment_vm.worker_nodes[i].name
+    for k, v in proxmox_virtual_environment_vm.nodes : k => {
+      vm_id      = v.vm_id
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      name       = v.name
     }
+    if startswith(k, "worker-")
   }
 }
 
@@ -32,12 +34,12 @@ output "talos_image_id" {
 
 output "controlplane_template_id" {
   description = "Control plane template VM ID"
-  value       = proxmox_virtual_environment_vm.controlplane_template.vm_id
+  value       = proxmox_virtual_environment_vm.template["controlplane"].vm_id
 }
 
 output "worker_template_id" {
   description = "Worker template VM ID"
-  value       = proxmox_virtual_environment_vm.worker_template.vm_id
+  value       = proxmox_virtual_environment_vm.template["worker"].vm_id
 }
 
 output "talos_machine_secrets" {
@@ -48,12 +50,18 @@ output "talos_machine_secrets" {
 
 output "controlplane_ips" {
   description = "List of control plane IP addresses"
-  value       = [for i in range(var.controlplane_count) : cidrhost(var.network_cidr, var.controlplane_ip_start + i)]
+  value = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    if startswith(k, "controlplane-")
+  ]
 }
 
 output "worker_ips" {
   description = "List of worker IP addresses"
-  value       = [for i in range(var.worker_count) : cidrhost(var.network_cidr, var.worker_ip_start + i)]
+  value = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    if startswith(k, "worker-")
+  ]
 }
 
 output "talos_client_configuration" {
@@ -61,10 +69,15 @@ output "talos_client_configuration" {
   value = templatefile("${path.module}/talos-client-config.yaml", {
     cluster_name       = var.cluster_name
     talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_endpoint)[0]}:50000"
-    node_ips           = [for i in range(var.controlplane_count) : cidrhost(var.network_cidr, var.controlplane_ip_start + i)]
     ca_certificate     = talos_machine_secrets.this.client_configuration.ca_certificate
     client_certificate = talos_machine_secrets.this.client_configuration.client_certificate
     client_key         = talos_machine_secrets.this.client_configuration.client_key
   })
   sensitive = true
+}
+
+output "proxmox_ccm_token" {
+  description = "Proxmox Cloud Controller Manager API token"
+  value       = proxmox_virtual_environment_user_token.ccm.value
+  sensitive   = true
 }

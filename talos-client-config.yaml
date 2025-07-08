@@ -4,9 +4,7 @@ contexts:
     endpoints:
       - ${talos_endpoint}
     nodes:
-%{ for node_ip in node_ips ~}
-      - ${node_ip}
-%{ endfor ~}
+      - ${talos_endpoint}
     ca: ${ca_certificate}
     crt: ${client_certificate}
     key: ${client_key}
