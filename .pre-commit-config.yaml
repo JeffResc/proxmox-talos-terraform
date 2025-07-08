@@ -39,6 +39,7 @@ repos:
         args:
           - --args=-json
           - --args=-no-color
+          - --hook-config=--tf-path=tofu
   - repo: local
     hooks:
       - id: terraform-docs-with-header-conversion

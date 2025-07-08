@@ -1,0 +1,40 @@
+proxmox_config = {
+  endpoint  = "https://192.168.100.1:8006/"
+  api_token = "user@node!token=my-token"
+  insecure  = true
+
+  node_name                     = "pve"
+  talos_disk_image_datastore_id = "local"
+  template_datastore_id         = "local-lvm"
+  vm_datastore_id               = "local-lvm"
+
+  dns_servers = [
+    "192.168.1.1",
+    "1.1.1.1",
+    "8.8.8.8"
+  ]
+}
+
+network_config = {
+  cidr      = "192.168.100.0/24"
+  gateway   = "192.168.100.1"
+  bridge    = "vmbr0"
+  interface = "eth0"
+}
+
+cluster_config = {
+  name          = "talos-cluster"
+  talos_version = "v1.10.5"
+
+  vip = {
+    enabled = true
+    ip      = "192.168.100.100"
+  }
+}
+
+node_config = {
+  controlplane_count    = 3
+  worker_count          = 3
+  controlplane_ip_start = 10
+  worker_ip_start       = 20
+}

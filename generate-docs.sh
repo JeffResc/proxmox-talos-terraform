@@ -25,10 +25,10 @@ for module_dir in "$SCRIPT_DIR/modules"/*; do
     if [ -d "$module_dir" ]; then
         module_name=$(basename "$module_dir")
         echo "Generating documentation for module: $module_name"
-        
+
         # Generate terraform docs for the module
         terraform-docs -c "$SCRIPT_DIR/.terraform-docs.yml" "$module_dir"
-        
+
         # Post-process the module README to convert ## headers to ### within the terraform-docs section
         perl -i -pe '
             if (/<!-- BEGIN_TF_DOCS -->/ .. /<!-- END_TF_DOCS -->/) {

@@ -90,17 +90,10 @@ No resources.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_cluster_endpoint_override"></a> [cluster\_endpoint\_override](#input\_cluster\_endpoint\_override) | Custom cluster endpoint URL. Only used when cluster\_vip\_enabled is false. Must include protocol and port. | `string` | `null` | no |
-| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the Talos cluster | `string` | `"talos"` | no |
-| <a name="input_cluster_vip_enabled"></a> [cluster\_vip\_enabled](#input\_cluster\_vip\_enabled) | Enable VIP (Virtual IP) for cluster endpoint. When true, cluster\_vip\_ip is used as the cluster endpoint. | `bool` | `true` | no |
-| <a name="input_cluster_vip_ip"></a> [cluster\_vip\_ip](#input\_cluster\_vip\_ip) | IP address for the cluster VIP (Virtual IP). Required when cluster\_vip\_enabled is true. | `string` | `null` | no |
-| <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses (ignored when enable\_dhcp is true) | `string` | n/a | yes |
-| <a name="input_network_gateway"></a> [network\_gateway](#input\_network\_gateway) | Network gateway IP address (ignored when enable\_dhcp is true) | `string` | n/a | yes |
-| <a name="input_network_interface"></a> [network\_interface](#input\_network\_interface) | Network interface name for node network configuration | `string` | `"eth0"` | no |
-| <a name="input_proxmox_api_token"></a> [proxmox\_api\_token](#input\_proxmox\_api\_token) | Proxmox API token in format 'user@realm!tokenname=token-secret' | `string` | n/a | yes |
-| <a name="input_proxmox_endpoint"></a> [proxmox\_endpoint](#input\_proxmox\_endpoint) | Proxmox Virtual Environment API endpoint URL | `string` | `"https://your-proxmox:8006/"` | no |
-| <a name="input_proxmox_insecure"></a> [proxmox\_insecure](#input\_proxmox\_insecure) | Skip TLS certificate verification for Proxmox API | `bool` | `false` | no |
-| <a name="input_talos_version"></a> [talos\_version](#input\_talos\_version) | Version of Talos Linux to use | `string` | `"v1.10.5"` | no |
+| <a name="input_cluster_config"></a> [cluster\_config](#input\_cluster\_config) | Cluster configuration settings | <pre>object({<br/>    name          = string<br/>    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos<br/>    vip = optional(object({<br/>      enabled = bool<br/>      ip      = optional(string)<br/>      }), {<br/>      enabled = true<br/>      ip      = null<br/>    })<br/>    endpoint_override = optional(string)<br/>  })</pre> | n/a | yes |
+| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    cidr      = string<br/>    gateway   = string<br/>    bridge    = optional(string, "vmbr0")<br/>    interface = optional(string, "eth0")<br/>  })</pre> | n/a | yes |
+| <a name="input_node_config"></a> [node\_config](#input\_node\_config) | Node configuration for the cluster | <pre>object({<br/>    controlplane_count    = number<br/>    worker_count          = number<br/>    controlplane_ip_start = optional(number, 10)<br/>    worker_ip_start       = optional(number, 20)<br/>  })</pre> | <pre>{<br/>  "controlplane_count": 3,<br/>  "worker_count": 3<br/>}</pre> | no |
+| <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    # Connection settings<br/>    endpoint  = string<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    # Infrastructure settings<br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    # DNS settings<br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/>  })</pre> | n/a | yes |
 
 ### Outputs
 

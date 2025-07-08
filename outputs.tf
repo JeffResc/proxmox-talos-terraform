@@ -3,7 +3,7 @@ output "controlplane_nodes" {
   value = {
     for k, v in module.proxmox_infrastructure.nodes : k => {
       vm_id      = v.vm_id
-      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_config.interface)][0]
       name       = v.name
     }
     if startswith(k, "controlplane-")
@@ -15,7 +15,7 @@ output "worker_nodes" {
   value = {
     for k, v in module.proxmox_infrastructure.nodes : k => {
       vm_id      = v.vm_id
-      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_config.interface)][0]
       name       = v.name
     }
     if startswith(k, "worker-")
@@ -24,7 +24,7 @@ output "worker_nodes" {
 
 output "cluster_endpoint" {
   description = "Cluster endpoint URL"
-  value       = var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override
+  value       = var.cluster_config.vip.enabled ? "https://${var.cluster_config.vip.ip}:6443" : var.cluster_config.endpoint_override
 }
 
 output "talos_image_id" {
@@ -51,7 +51,7 @@ output "talos_machine_secrets" {
 output "controlplane_ips" {
   description = "List of control plane IP addresses"
   value = [
-    for k, v in module.proxmox_infrastructure.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    for k, v in module.proxmox_infrastructure.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_config.interface)][0]
     if startswith(k, "controlplane-")
   ]
 }
@@ -59,7 +59,7 @@ output "controlplane_ips" {
 output "worker_ips" {
   description = "List of worker IP addresses"
   value = [
-    for k, v in module.proxmox_infrastructure.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    for k, v in module.proxmox_infrastructure.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_config.interface)][0]
     if startswith(k, "worker-")
   ]
 }
@@ -67,8 +67,8 @@ output "worker_ips" {
 output "talos_client_configuration" {
   description = "Complete Talos client configuration for ~/.talos/config"
   value = templatefile("${path.module}/talos-client-config.yaml", {
-    cluster_name       = var.cluster_name
-    talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override)[0]}:50000"
+    cluster_name       = var.cluster_config.name
+    talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_config.vip.enabled ? "https://${var.cluster_config.vip.ip}:6443" : var.cluster_config.endpoint_override)[0]}:50000"
     ca_certificate     = module.talos_bootstrap.client_configuration.ca_certificate
     client_certificate = module.talos_bootstrap.client_configuration.client_certificate
     client_key         = module.talos_bootstrap.client_configuration.client_key

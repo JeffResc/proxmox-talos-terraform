@@ -1,88 +1,121 @@
 # Root-level variables for values that need to be shared across modules
 # or have no reasonable defaults
 
-variable "proxmox_api_token" {
-  description = "Proxmox API token in format 'user@realm!tokenname=token-secret'"
-  type        = string
-  sensitive   = true
+#######################################
+# Proxmox Connection Configuration
+#######################################
+variable "proxmox_config" {
+  description = "Proxmox connection and infrastructure configuration"
+  type = object({
+    # Connection settings
+    endpoint  = string
+    api_token = string
+    insecure  = optional(bool, false)
+
+    # Infrastructure settings
+    node_name                     = optional(string, "pve")
+    talos_disk_image_datastore_id = optional(string, "local")
+    template_datastore_id         = optional(string, "local-lvm")
+    vm_datastore_id               = optional(string, "local-lvm")
+
+    # DNS settings
+    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
+  })
+  sensitive = true
+  validation {
+    condition     = can(regex("^https?://", var.proxmox_config.endpoint))
+    error_message = "Proxmox endpoint must be a valid URL starting with http:// or https://"
+  }
 }
 
-# Network configuration - required for static IP setup
-variable "network_cidr" {
-  description = "Network CIDR for node IP addresses (ignored when enable_dhcp is true)"
-  type        = string
+#######################################
+# Network Configuration
+#######################################
+variable "network_config" {
+  description = "Network configuration for Talos nodes"
+  type = object({
+    cidr      = string
+    gateway   = string
+    bridge    = optional(string, "vmbr0")
+    interface = optional(string, "eth0")
+  })
   validation {
-    condition     = can(cidrhost(var.network_cidr, 0))
+    condition     = can(cidrhost(var.network_config.cidr, 0))
     error_message = "Network CIDR must be a valid CIDR notation."
   }
 }
 
-variable "network_gateway" {
-  description = "Network gateway IP address (ignored when enable_dhcp is true)"
-  type        = string
-}
-
-# VIP configuration - required when VIP is enabled
-variable "cluster_vip_ip" {
-  description = "IP address for the cluster VIP (Virtual IP). Required when cluster_vip_enabled is true."
-  type        = string
-  default     = null
+#######################################
+# Cluster Configuration
+#######################################
+variable "cluster_config" {
+  description = "Cluster configuration settings"
+  type = object({
+    name          = string
+    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos
+    vip = optional(object({
+      enabled = bool
+      ip      = optional(string)
+      }), {
+      enabled = true
+      ip      = null
+    })
+    endpoint_override = optional(string)
+  })
   validation {
-    condition     = var.cluster_vip_ip == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_vip_ip))
-    error_message = "Cluster VIP IP must be a valid IPv4 address."
+    condition = (
+      !var.cluster_config.vip.enabled ||
+      (var.cluster_config.vip.enabled && var.cluster_config.vip.ip != null)
+    )
+    error_message = "VIP IP must be provided when VIP is enabled."
   }
-}
-
-# Talos version - needs to be consistent across modules
-variable "talos_version" {
-  description = "Version of Talos Linux to use"
-  type        = string
-  default     = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
-}
-
-# Proxmox connection settings
-variable "proxmox_endpoint" {
-  description = "Proxmox Virtual Environment API endpoint URL"
-  type        = string
-  default     = "https://your-proxmox:8006/"
-}
-
-variable "proxmox_insecure" {
-  description = "Skip TLS certificate verification for Proxmox API"
-  type        = bool
-  default     = false
-}
-
-# Cluster configuration
-variable "cluster_name" {
-  description = "Name of the Talos cluster"
-  type        = string
-  default     = "talos"
-}
-
-variable "cluster_vip_enabled" {
-  description = "Enable VIP (Virtual IP) for cluster endpoint. When true, cluster_vip_ip is used as the cluster endpoint."
-  type        = bool
-  default     = true
-}
-
-variable "cluster_endpoint_override" {
-  description = "Custom cluster endpoint URL. Only used when cluster_vip_enabled is false. Must include protocol and port."
-  type        = string
-  default     = null
   validation {
-    condition     = var.cluster_endpoint_override == null || can(regex("^https?://", var.cluster_endpoint_override))
+    condition = (
+      var.cluster_config.vip.enabled ||
+      (!var.cluster_config.vip.enabled && var.cluster_config.endpoint_override != null)
+    )
+    error_message = "endpoint_override must be provided when VIP is disabled."
+  }
+  validation {
+    condition = (
+      var.cluster_config.vip.ip == null ||
+      can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_config.vip.ip))
+    )
+    error_message = "VIP IP must be a valid IPv4 address."
+  }
+  validation {
+    condition = (
+      var.cluster_config.endpoint_override == null ||
+      can(regex("^https?://", var.cluster_config.endpoint_override))
+    )
     error_message = "Cluster endpoint override must be a valid URL starting with http:// or https://"
   }
-  validation {
-    condition     = var.cluster_vip_enabled || var.cluster_endpoint_override != null
-    error_message = "cluster_endpoint_override must be provided when cluster_vip_enabled is false"
-  }
 }
 
-# Network interface for outputs
-variable "network_interface" {
-  description = "Network interface name for node network configuration"
-  type        = string
-  default     = "eth0"
+# Note: Individual Proxmox infrastructure variables have been moved into proxmox_config
+# for better organization and grouping of related settings
+
+#######################################
+# Node Configuration
+#######################################
+variable "node_config" {
+  description = "Node configuration for the cluster"
+  type = object({
+    controlplane_count    = number
+    worker_count          = number
+    controlplane_ip_start = optional(number, 10)
+    worker_ip_start       = optional(number, 20)
+  })
+  default = {
+    controlplane_count = 3
+    worker_count       = 3
+  }
+  validation {
+    condition     = var.node_config.controlplane_count % 2 == 1 && var.node_config.controlplane_count >= 1
+    error_message = "Control plane count must be an odd number (1, 3, 5, etc.) for etcd quorum."
+  }
+  validation {
+    condition     = var.node_config.worker_count >= 0
+    error_message = "Worker count must be 0 or greater."
+  }
 }

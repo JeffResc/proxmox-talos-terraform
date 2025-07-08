@@ -16,13 +16,13 @@ module "talos_bootstrap" {
   source = "./modules/talos-bootstrap"
 
   # Pass through shared variables
-  talos_version             = var.talos_version
-  cluster_name              = var.cluster_name
-  cluster_vip_enabled       = var.cluster_vip_enabled
-  cluster_vip_ip            = var.cluster_vip_ip
-  cluster_endpoint_override = var.cluster_endpoint_override
-  proxmox_endpoint          = var.proxmox_endpoint
-  proxmox_insecure          = var.proxmox_insecure
+  talos_version             = var.cluster_config.talos_version
+  cluster_name              = var.cluster_config.name
+  cluster_vip_enabled       = var.cluster_config.vip.enabled
+  cluster_vip_ip            = var.cluster_config.vip.ip
+  cluster_endpoint_override = var.cluster_config.endpoint_override
+  proxmox_endpoint          = var.proxmox_config.endpoint
+  proxmox_insecure          = var.proxmox_config.insecure
 
   # Override defaults only if needed
   # network_interface = "ens18"
@@ -43,22 +43,30 @@ module "proxmox_infrastructure" {
   source = "./modules/proxmox-infrastructure"
 
   # Pass through shared variables
-  talos_version   = var.talos_version
-  cluster_name    = var.cluster_name
-  network_cidr    = var.network_cidr
-  network_gateway = var.network_gateway
+  talos_version   = var.cluster_config.talos_version
+  cluster_name    = var.cluster_config.name
+  network_cidr    = var.network_config.cidr
+  network_gateway = var.network_config.gateway
+
+  # Pass through infrastructure variables
+  talos_disk_image_datastore_id = var.proxmox_config.talos_disk_image_datastore_id
+  template_datastore_id         = var.proxmox_config.template_datastore_id
+  vm_datastore_id               = var.proxmox_config.vm_datastore_id
+  network_bridge                = var.network_config.bridge
+  controlplane_ip_start         = var.node_config.controlplane_ip_start
+  worker_ip_start               = var.node_config.worker_ip_start
+  dns_servers                   = var.proxmox_config.dns_servers
+
+  # Node distribution configuration
+  # Since we're using simple counts, we need to create the node_distribution
+  node_distribution = {
+    (var.proxmox_config.node_name) = {
+      controlplane_count = var.node_config.controlplane_count
+      worker_count       = var.node_config.worker_count
+    }
+  }
 
   # Override defaults only if needed
-  # node_distribution = {
-  #   "pve1" = {
-  #     controlplane_count = 1
-  #     worker_count = 2
-  #   }
-  #   "pve2" = {
-  #     controlplane_count = 2
-  #     worker_count = 1
-  #   }
-  # }
   # enable_dhcp = true
   # controlplane_memory = 2048
   # worker_memory = 4096
