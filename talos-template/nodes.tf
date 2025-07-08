@@ -19,6 +19,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template["controlplane"].vm_id
+    full  = true
   }
 
   initialization {
@@ -43,10 +44,6 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   lifecycle {
     create_before_destroy = false
     ignore_changes        = [name, vm_id]
-    replace_triggered_by = [
-      proxmox_virtual_environment_vm.template["controlplane"].id,
-      proxmox_virtual_environment_download_file.talos_image.id
-    ]
   }
 
   depends_on = [
@@ -75,6 +72,7 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template["worker"].vm_id
+    full  = true
   }
 
   initialization {
@@ -99,10 +97,6 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   lifecycle {
     create_before_destroy = false
     ignore_changes        = [name, vm_id]
-    replace_triggered_by = [
-      proxmox_virtual_environment_vm.template["worker"].id,
-      proxmox_virtual_environment_download_file.talos_image.id
-    ]
   }
 
   depends_on = [
