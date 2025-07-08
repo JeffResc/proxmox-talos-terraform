@@ -26,9 +26,9 @@ locals {
   network_mask   = split("/", var.network_cidr)[1]
 
   # File names
-  talos_image_filename = "talos-${var.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
+  talos_image_filename = "${var.cluster_name}-${var.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
 
   # Template names
-  controlplane_template_name = "talos-cp-${var.talos_version}"
-  worker_template_name       = "talos-wrkr-${var.talos_version}"
+  controlplane_template_name = "${var.cluster_name}-cp-${var.talos_version}"
+  worker_template_name       = "${var.cluster_name}-wrkr-${var.talos_version}"
 }
