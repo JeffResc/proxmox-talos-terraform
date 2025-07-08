@@ -15,12 +15,12 @@ locals {
   # Memory configurations (in MB)
   controlplane_memory = var.controlplane_memory
   worker_memory       = var.worker_memory
-  
+
   # CPU configurations
   controlplane_cpu_cores = var.controlplane_cpu_cores
   worker_cpu_cores       = var.worker_cpu_cores
-  cpu_type              = var.cpu_type
-  
+  cpu_type               = var.cpu_type
+
   # Network configuration
   network_bridge = "vmbr0"
   network_mask   = split("/", var.network_cidr)[1]
