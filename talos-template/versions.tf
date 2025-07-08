@@ -10,5 +10,9 @@ terraform {
       source  = "siderolabs/talos"
       version = "0.9.0-alpha.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.1"
+    }
   }
 }

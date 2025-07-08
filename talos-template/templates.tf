@@ -36,6 +36,11 @@ resource "proxmox_virtual_environment_vm" "controlplane_template" {
     enabled = true
   }
   
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_virtual_environment_download_file.talos_image.id
+    ]
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "worker_template" {
@@ -76,4 +81,9 @@ resource "proxmox_virtual_environment_vm" "worker_template" {
     enabled = true
   }
   
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_virtual_environment_download_file.talos_image.id
+    ]
+  }
 }
