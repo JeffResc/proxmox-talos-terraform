@@ -62,7 +62,7 @@ data "talos_machine_configuration" "controlplane" {
       cluster = {
         inlineManifests = [
           {
-            name = "proxmox-cloud-controller-manager-config"
+            name     = "proxmox-cloud-controller-manager-config"
             contents = <<-EOF
               apiVersion: v1
               kind: Secret
@@ -118,7 +118,7 @@ resource "talos_machine_bootstrap" "this" {
   depends_on = [
     proxmox_virtual_environment_vm.controlplane_nodes
   ]
-  
+
   client_configuration = talos_machine_secrets.this.client_configuration
   endpoint             = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
   node                 = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
@@ -129,13 +129,13 @@ resource "talos_machine_configuration_apply" "controlplane" {
   depends_on = [
     proxmox_virtual_environment_vm.controlplane_nodes
   ]
-  
+
   count                       = var.controlplane_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
   endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
   node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
-  
+
   config_patches = [
     yamlencode({
       machine = {
@@ -155,13 +155,13 @@ resource "talos_machine_configuration_apply" "worker" {
     proxmox_virtual_environment_vm.worker_nodes,
     talos_machine_bootstrap.this
   ]
-  
+
   count                       = var.worker_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
   node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
-  
+
   config_patches = [
     yamlencode({
       machine = {
