@@ -5,19 +5,19 @@
 ### 1. Tofu Initialization
 
 ```bash
-tofu -chdir=talos-template init
+tofu init
 ```
 
 ### 2. Tofu Plan
 
 ```bash
-tofu -chdir=talos-template plan -out=tfplan
+tofu plan -out=tfplan
 ```
 
 ### 3. Tofu Apply
 
 ```bash
-tofu -chdir=talos-template apply tfplan
+tofu apply tfplan
 ```
 
 Once the apply is successful, you will have a Talos cluster running on Proxmox with the following components:
@@ -32,7 +32,7 @@ You must wait for the Talos machines to fully initialize. This can take a few mi
 After applying the Terraform configuration, export the Talos client configuration:
 
 ```sh
-tofu -chdir=talos-template output -raw talos_client_configuration > ~/.talos/config
+tofu output -raw talos_client_configuration > ~/.talos/config
 ```
 
 ### 5. Get Kubeconfig
