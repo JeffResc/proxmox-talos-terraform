@@ -4,8 +4,6 @@ variable "proxmox_endpoint" {
 }
 
 variable "proxmox_insecure" {
-  type = bool
-  default = false
   type    = bool
   default = true
 }
