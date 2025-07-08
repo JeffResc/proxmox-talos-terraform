@@ -39,7 +39,7 @@ variable "node_name" {
 variable "cluster_name" {
   description = "Name of the Talos cluster"
   type        = string
-  default     = "talos-cluster"
+  default     = "talos"
 }
 
 variable "cluster_endpoint" {
