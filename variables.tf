@@ -220,12 +220,6 @@ variable "worker_cpu_cores" {
   }
 }
 
-variable "cpu_type" {
-  description = "CPU type for VMs"
-  type        = string
-  default     = "x86-64-v2-AES"
-}
-
 variable "network_interface" {
   description = "Network interface name for node network configuration"
   type        = string
@@ -260,4 +254,84 @@ variable "network_bridge" {
   description = "Network bridge for VM network interfaces"
   type        = string
   default     = "vmbr0"
+}
+
+# VM Template IDs
+variable "controlplane_template_id" {
+  description = "VM ID for the control plane template"
+  type        = number
+  default     = 998
+  validation {
+    condition     = var.controlplane_template_id > 0 && var.controlplane_template_id < 10000
+    error_message = "Control plane template ID must be between 1 and 9999."
+  }
+}
+
+variable "worker_template_id" {
+  description = "VM ID for the worker template"
+  type        = number
+  default     = 999
+  validation {
+    condition     = var.worker_template_id > 0 && var.worker_template_id < 10000
+    error_message = "Worker template ID must be between 1 and 9999."
+  }
+}
+
+# VM Starting IDs
+variable "controlplane_vm_id_start" {
+  description = "Starting VM ID for control plane nodes"
+  type        = number
+  default     = 2000
+  validation {
+    condition     = var.controlplane_vm_id_start > 0 && var.controlplane_vm_id_start < 10000
+    error_message = "Control plane VM ID start must be between 1 and 9999."
+  }
+}
+
+variable "worker_vm_id_start" {
+  description = "Starting VM ID for worker nodes"
+  type        = number
+  default     = 3000
+  validation {
+    condition     = var.worker_vm_id_start > 0 && var.worker_vm_id_start < 10000
+    error_message = "Worker VM ID start must be between 1 and 9999."
+  }
+}
+
+# Disk Sizes (in GB)
+variable "controlplane_disk_size" {
+  description = "Disk size for control plane nodes in GB"
+  type        = number
+  default     = 20
+  validation {
+    condition     = var.controlplane_disk_size >= 10
+    error_message = "Control plane disk size must be at least 10 GB."
+  }
+}
+
+variable "worker_disk_size" {
+  description = "Disk size for worker nodes in GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.worker_disk_size >= 20
+    error_message = "Worker disk size must be at least 20 GB."
+  }
+}
+
+variable "cloudinit_disk_size" {
+  description = "Cloud-init disk size in MB"
+  type        = number
+  default     = 4
+  validation {
+    condition     = var.cloudinit_disk_size >= 1
+    error_message = "Cloud-init disk size must be at least 1 MB."
+  }
+}
+
+# Tags
+variable "common_tags" {
+  description = "Common tags to apply to all resources"
+  type        = list(string)
+  default     = ["talos", "terraform"]
 }
