@@ -2,13 +2,9 @@ name: Validate OpenTofu
 
 on:
   pull_request:
-    paths:
-      - 'talos-template/**'
   push:
     branches:
       - main
-    paths:
-      - 'talos-template/**'
 
 jobs:
   validate:
@@ -25,12 +21,9 @@ jobs:
           
       - name: Tofu Format Check
         run: tofu fmt -check -recursive
-        working-directory: talos-template
         
       - name: Tofu Init
         run: tofu init -backend=false
-        working-directory: talos-template
         
       - name: Tofu Validate
         run: tofu validate
-        working-directory: talos-template
