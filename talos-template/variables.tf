@@ -1,15 +1,17 @@
 variable "proxmox_endpoint" {
-  type = string
+  type    = string
   default = "https://your-proxmox:8006/"
 }
 
 variable "proxmox_insecure" {
   type = bool
   default = false
+  type    = bool
+  default = true
 }
 
 variable "talos_version" {
-  type = string
+  type    = string
   default = "v1.10.5"
 }
 
@@ -21,7 +23,7 @@ variable "talos_disk_image_datastore_id" {
 
 variable "template_datastore_id" {
   description = "Datastore for VM template disks"
-  type        = string 
+  type        = string
   default     = "local-lvm"
 }
 
@@ -32,7 +34,7 @@ variable "vm_datastore_id" {
 }
 
 variable "node_name" {
-  type = string
+  type    = string
   default = "pve"
 }
 
@@ -172,4 +174,10 @@ variable "enable_vip" {
   description = "Enable VIP (Virtual IP) for controlplane nodes"
   type        = bool
   default     = true
+}
+
+variable "network_interface" {
+  description = "Network interface name for node network configuration"
+  type        = string
+  default     = "eth0"
 }
