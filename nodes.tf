@@ -3,7 +3,7 @@ locals {
   node_configs = {
     controlplane = {
       count        = var.controlplane_count
-      name_prefix  = "${var.cluster_name}-cp"
+      name_prefix  = "${var.cluster_name}-ctrl"
       vm_id_min    = var.controlplane_vm_id_min
       vm_id_max    = var.controlplane_vm_id_max
       ip_start     = var.controlplane_ip_start
@@ -11,7 +11,7 @@ locals {
     }
     worker = {
       count        = var.worker_count
-      name_prefix  = "${var.cluster_name}-wrkr"
+      name_prefix  = "${var.cluster_name}-node"
       vm_id_min    = var.worker_vm_id_min
       vm_id_max    = var.worker_vm_id_max
       ip_start     = var.worker_ip_start
