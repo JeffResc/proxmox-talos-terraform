@@ -38,7 +38,7 @@ jobs:
       - name: Check documentation is up to date
         run: |
           ./generate-docs.sh
-          if ! git diff --exit-code; then
+          if ! git diff --exit-code -- ':!.terraform.lock.hcl'; then
             echo "Documentation is not up to date. Please run './generate-docs.sh' and commit the changes."
             exit 1
           fi
