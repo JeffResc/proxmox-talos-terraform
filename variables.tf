@@ -282,26 +282,6 @@ variable "worker_template_id" {
   }
 }
 
-# VM Starting IDs
-variable "controlplane_vm_id_start" {
-  description = "Starting VM ID for control plane nodes"
-  type        = number
-  default     = 2000
-  validation {
-    condition     = var.controlplane_vm_id_start > 0 && var.controlplane_vm_id_start < 10000
-    error_message = "Control plane VM ID start must be between 1 and 9999."
-  }
-}
-
-variable "worker_vm_id_start" {
-  description = "Starting VM ID for worker nodes"
-  type        = number
-  default     = 3000
-  validation {
-    condition     = var.worker_vm_id_start > 0 && var.worker_vm_id_start < 10000
-    error_message = "Worker VM ID start must be between 1 and 9999."
-  }
-}
 
 # Disk Sizes (in GB)
 variable "controlplane_disk_size" {
