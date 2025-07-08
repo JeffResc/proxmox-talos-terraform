@@ -35,6 +35,10 @@ repos:
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
           - --hook-config=--tf-path=tofu
+      - id: terraform_validate
+        args:
+          - --args=-json
+          - --args=-no-color
   - repo: local
     hooks:
       - id: terraform-docs-with-header-conversion
