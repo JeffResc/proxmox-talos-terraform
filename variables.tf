@@ -76,12 +76,16 @@ variable "cluster_vip_enabled" {
 }
 
 variable "cluster_vip_ip" {
-  description = "IP address for the cluster VIP (Virtual IP). Used when cluster_vip_enabled is true."
+  description = "IP address for the cluster VIP (Virtual IP). Required when cluster_vip_enabled is true."
   type        = string
-  default     = "192.168.0.100"
+  default     = null
   validation {
-    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_vip_ip))
+    condition     = var.cluster_vip_ip == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_vip_ip))
     error_message = "Cluster VIP IP must be a valid IPv4 address."
+  }
+  validation {
+    condition     = !var.cluster_vip_enabled || var.cluster_vip_ip != null
+    error_message = "cluster_vip_ip must be provided when cluster_vip_enabled is true."
   }
 }
 

@@ -110,7 +110,7 @@ No modules.
 | <a name="input_cluster_endpoint_override"></a> [cluster\_endpoint\_override](#input\_cluster\_endpoint\_override) | Custom cluster endpoint URL. Only used when cluster\_vip\_enabled is false. Must include protocol and port. | `string` | `null` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the Talos cluster | `string` | `"talos"` | no |
 | <a name="input_cluster_vip_enabled"></a> [cluster\_vip\_enabled](#input\_cluster\_vip\_enabled) | Enable VIP (Virtual IP) for cluster endpoint. When true, cluster\_vip\_ip is used as the cluster endpoint. | `bool` | `true` | no |
-| <a name="input_cluster_vip_ip"></a> [cluster\_vip\_ip](#input\_cluster\_vip\_ip) | IP address for the cluster VIP (Virtual IP). Used when cluster\_vip\_enabled is true. | `string` | `"192.168.0.100"` | no |
+| <a name="input_cluster_vip_ip"></a> [cluster\_vip\_ip](#input\_cluster\_vip\_ip) | IP address for the cluster VIP (Virtual IP). Required when cluster\_vip\_enabled is true. | `string` | `null` | no |
 | <a name="input_common_tags"></a> [common\_tags](#input\_common\_tags) | Common tags to apply to all resources | `list(string)` | <pre>[<br/>  "talos",<br/>  "terraform"<br/>]</pre> | no |
 | <a name="input_controlplane_cpu_cores"></a> [controlplane\_cpu\_cores](#input\_controlplane\_cpu\_cores) | Number of CPU cores for control plane nodes | `number` | `4` | no |
 | <a name="input_controlplane_disk_size"></a> [controlplane\_disk\_size](#input\_controlplane\_disk\_size) | Disk size for control plane nodes in GB | `number` | `20` | no |
