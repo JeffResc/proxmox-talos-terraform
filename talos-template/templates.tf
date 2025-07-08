@@ -18,20 +18,20 @@ resource "proxmox_virtual_environment_vm" "template" {
       disk_size = local.worker_disk_size
     }
   }
-  
+
   name      = each.value.name
   node_name = var.node_name
   vm_id     = each.value.vm_id
   template  = true
   tags      = concat(local.common_tags, [each.value.tag])
-  
+
   disk {
     datastore_id = var.template_datastore_id
     file_id      = proxmox_virtual_environment_download_file.talos_image.id
     interface    = "virtio0"
     size         = each.value.disk_size
   }
-  
+
   memory {
     dedicated = each.value.memory
     floating  = each.value.memory
