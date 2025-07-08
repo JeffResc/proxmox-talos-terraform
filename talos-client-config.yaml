@@ -3,6 +3,8 @@ contexts:
   ${cluster_name}:
     endpoints:
       - ${talos_endpoint}
+    nodes:
+      - ${talos_endpoint}
     ca: ${ca_certificate}
     crt: ${client_certificate}
     key: ${client_key}
