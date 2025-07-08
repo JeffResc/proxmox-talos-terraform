@@ -3,7 +3,7 @@ output "controlplane_nodes" {
   value = {
     for i in range(var.controlplane_count) : "talos-cp-${i + 1}" => {
       vm_id      = proxmox_virtual_environment_vm.controlplane_nodes[i].vm_id
-      ip_address = cidrhost(var.network_cidr, var.controlplane_ip_start + i)
+      ip_address = proxmox_virtual_environment_vm.controlplane_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[i].network_interface_names, var.network_interface)][0]
       name       = proxmox_virtual_environment_vm.controlplane_nodes[i].name
     }
   }
@@ -14,7 +14,7 @@ output "worker_nodes" {
   value = {
     for i in range(var.worker_count) : "talos-worker-${i + 1}" => {
       vm_id      = proxmox_virtual_environment_vm.worker_nodes[i].vm_id
-      ip_address = cidrhost(var.network_cidr, var.worker_ip_start + i)
+      ip_address = proxmox_virtual_environment_vm.worker_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[i].network_interface_names, var.network_interface)][0]
       name       = proxmox_virtual_environment_vm.worker_nodes[i].name
     }
   }
@@ -48,12 +48,12 @@ output "talos_machine_secrets" {
 
 output "controlplane_ips" {
   description = "List of control plane IP addresses"
-  value       = [for i in range(var.controlplane_count) : cidrhost(var.network_cidr, var.controlplane_ip_start + i)]
+  value       = [for i in range(var.controlplane_count) : proxmox_virtual_environment_vm.controlplane_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[i].network_interface_names, var.network_interface)][0]]
 }
 
 output "worker_ips" {
   description = "List of worker IP addresses"
-  value       = [for i in range(var.worker_count) : cidrhost(var.network_cidr, var.worker_ip_start + i)]
+  value       = [for i in range(var.worker_count) : proxmox_virtual_environment_vm.worker_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[i].network_interface_names, var.network_interface)][0]]
 }
 
 output "talos_client_configuration" {
