@@ -244,17 +244,27 @@ variable "worker_ip_start" {
 }
 
 variable "network_cidr" {
-  description = "Network CIDR for node IP addresses (ignored when enable_dhcp is true)"
+  description = "Network CIDR for node IP addresses (only required when enable_dhcp is false)"
   type        = string
+  default     = null
   validation {
-    condition     = can(cidrhost(var.network_cidr, 0))
+    condition     = var.network_cidr == null || var.network_cidr == "" || can(cidrhost(var.network_cidr, 0))
     error_message = "Network CIDR must be a valid CIDR notation."
+  }
+  validation {
+    condition     = var.enable_dhcp || (var.network_cidr != null && var.network_cidr != "")
+    error_message = "network_cidr is required when enable_dhcp is false."
   }
 }
 
 variable "network_gateway" {
-  description = "Network gateway IP address (ignored when enable_dhcp is true)"
+  description = "Network gateway IP address (only required when enable_dhcp is false)"
   type        = string
+  default     = null
+  validation {
+    condition     = var.enable_dhcp || (var.network_gateway != null && var.network_gateway != "")
+    error_message = "network_gateway is required when enable_dhcp is false."
+  }
 }
 
 variable "enable_dhcp" {
