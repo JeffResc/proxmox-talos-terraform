@@ -24,7 +24,7 @@ output "worker_nodes" {
 
 output "cluster_endpoint" {
   description = "Cluster endpoint URL"
-  value       = var.cluster_endpoint
+  value       = local.cluster_endpoint
 }
 
 output "talos_image_id" {
@@ -68,7 +68,7 @@ output "talos_client_configuration" {
   description = "Complete Talos client configuration for ~/.talos/config"
   value = templatefile("${path.module}/talos-client-config.yaml", {
     cluster_name       = var.cluster_name
-    talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_endpoint)[0]}:50000"
+    talos_endpoint     = "${regex("https?://([^:]+)", local.cluster_endpoint)[0]}:50000"
     ca_certificate     = talos_machine_secrets.this.client_configuration.ca_certificate
     client_certificate = talos_machine_secrets.this.client_configuration.client_certificate
     client_key         = talos_machine_secrets.this.client_configuration.client_key

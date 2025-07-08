@@ -107,8 +107,10 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_cluster_endpoint"></a> [cluster\_endpoint](#input\_cluster\_endpoint) | Cluster endpoint URL | `string` | `"https://192.168.0.100:6443"` | no |
+| <a name="input_cluster_endpoint_override"></a> [cluster\_endpoint\_override](#input\_cluster\_endpoint\_override) | Custom cluster endpoint URL. Only used when cluster\_vip\_enabled is false. Must include protocol and port. | `string` | `null` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the Talos cluster | `string` | `"talos"` | no |
+| <a name="input_cluster_vip_enabled"></a> [cluster\_vip\_enabled](#input\_cluster\_vip\_enabled) | Enable VIP (Virtual IP) for cluster endpoint. When true, cluster\_vip\_ip is used as the cluster endpoint. | `bool` | `true` | no |
+| <a name="input_cluster_vip_ip"></a> [cluster\_vip\_ip](#input\_cluster\_vip\_ip) | IP address for the cluster VIP (Virtual IP). Required when cluster\_vip\_enabled is true. | `string` | `null` | no |
 | <a name="input_common_tags"></a> [common\_tags](#input\_common\_tags) | Common tags to apply to all resources | `list(string)` | <pre>[<br/>  "talos",<br/>  "terraform"<br/>]</pre> | no |
 | <a name="input_controlplane_cpu_cores"></a> [controlplane\_cpu\_cores](#input\_controlplane\_cpu\_cores) | Number of CPU cores for control plane nodes | `number` | `4` | no |
 | <a name="input_controlplane_disk_size"></a> [controlplane\_disk\_size](#input\_controlplane\_disk\_size) | Disk size for control plane nodes in GB | `number` | `20` | no |
@@ -120,7 +122,6 @@ No modules.
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | CPU type for VMs | `string` | `"x86-64-v2-AES"` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers for Talos nodes (applied regardless of enable\_dhcp setting) | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "1.0.0.1"<br/>]</pre> | no |
 | <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces. When true, static IP variables (network\_cidr, network\_gateway, controlplane\_ip\_start, worker\_ip\_start) are ignored | `bool` | `false` | no |
-| <a name="input_enable_vip"></a> [enable\_vip](#input\_enable\_vip) | Enable VIP (Virtual IP) for controlplane nodes | `bool` | `true` | no |
 | <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | Extra tags to add to resources | `list(string)` | `[]` | no |
 | <a name="input_image_download_node"></a> [image\_download\_node](#input\_image\_download\_node) | Proxmox node where Talos disk images are downloaded | `string` | `"pve"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Network bridge for VM network interfaces | `string` | `"vmbr0"` | no |
