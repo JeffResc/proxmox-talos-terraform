@@ -116,7 +116,7 @@ data "talos_machine_configuration" "worker" {
 # Bootstrap the cluster on the first controlplane node
 resource "talos_machine_bootstrap" "this" {
   depends_on = [
-    proxmox_virtual_environment_vm.controlplane_nodes
+    talos_machine_configuration_apply.controlplane
   ]
 
   client_configuration = talos_machine_secrets.this.client_configuration
