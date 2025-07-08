@@ -116,3 +116,15 @@ variable "dns_servers" {
   default     = ["192.168.0.1", "1.1.1.1", "1.0.0.1"]
 }
 
+variable "proxmox_ccm_user" {
+  description = "Proxmox user for Cloud Controller Manager"
+  type        = string
+  default     = "talos-ccm@pve"
+}
+
+variable "proxmox_ccm_role" {
+  description = "Proxmox role for Cloud Controller Manager"
+  type        = string
+  default     = "TalosCCM"
+}
+
