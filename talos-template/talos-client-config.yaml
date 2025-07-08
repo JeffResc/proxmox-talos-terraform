@@ -3,10 +3,6 @@ contexts:
   ${cluster_name}:
     endpoints:
       - ${talos_endpoint}
-    nodes:
-%{ for node_ip in node_ips ~}
-      - ${node_ip}
-%{ endfor ~}
     ca: ${ca_certificate}
     crt: ${client_certificate}
     key: ${client_key}
