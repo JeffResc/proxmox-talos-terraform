@@ -31,9 +31,33 @@ variable "vm_datastore_id" {
   default     = "local-lvm"
 }
 
-variable "node_name" {
-  type    = string
-  default = "pve"
+variable "node_distribution" {
+  description = "Distribution of VMs across Proxmox nodes"
+  type = map(object({
+    controlplane_count = number
+    worker_count       = number
+  }))
+  default = {
+    "pve" = {
+      controlplane_count = 3
+      worker_count       = 3
+    }
+  }
+  validation {
+    condition = alltrue([
+      for node_name, config in var.node_distribution :
+      config.controlplane_count >= 0 && config.worker_count >= 0
+    ])
+    error_message = "Node counts must be zero or positive."
+  }
+  validation {
+    condition = sum([
+      for node_name, config in var.node_distribution : config.controlplane_count
+      ]) > 0 && sum([
+      for node_name, config in var.node_distribution : config.controlplane_count
+    ]) % 2 == 1
+    error_message = "Total control plane count must be a positive odd number for HA."
+  }
 }
 
 variable "cluster_name" {
@@ -48,25 +72,6 @@ variable "cluster_endpoint" {
   default     = "https://192.168.0.100:6443"
 }
 
-variable "controlplane_count" {
-  description = "Number of control plane nodes"
-  type        = number
-  default     = 3
-  validation {
-    condition     = var.controlplane_count > 0 && var.controlplane_count % 2 == 1
-    error_message = "Control plane count must be a positive odd number for HA."
-  }
-}
-
-variable "worker_count" {
-  description = "Number of worker nodes"
-  type        = number
-  default     = 3
-  validation {
-    condition     = var.worker_count >= 0
-    error_message = "Worker count must be zero or positive."
-  }
-}
 
 variable "network_cidr" {
   description = "Network CIDR for node IP addresses"
@@ -324,4 +329,16 @@ variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = list(string)
   default     = ["talos", "terraform"]
+}
+
+variable "template_node" {
+  description = "Proxmox node where VM templates are created"
+  type        = string
+  default     = "pve"
+}
+
+variable "image_download_node" {
+  description = "Proxmox node where Talos disk images are downloaded"
+  type        = string
+  default     = "pve"
 }

@@ -23,7 +23,7 @@ resource "talos_image_factory_schematic" "this" {
 resource "proxmox_virtual_environment_download_file" "talos_image" {
   content_type = "import"
   datastore_id = var.talos_disk_image_datastore_id
-  node_name    = var.node_name
+  node_name    = var.image_download_node
   file_name    = local.talos_image_filename
   url          = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/nocloud-amd64.qcow2"
   overwrite    = true
@@ -83,7 +83,7 @@ data "talos_machine_configuration" "controlplane" {
         externalCloudProvider = {
           enabled = true
           manifests = [
-            "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager-talos.yml" # renovate: datasource=github-tags depName=sergelogvinov/proxmox-cloud-controller-manager
+            "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager.yml" # renovate: datasource=github-tags depName=sergelogvinov/proxmox-cloud-controller-manager
           ]
         }
       }
