@@ -319,16 +319,6 @@ variable "worker_disk_size" {
   }
 }
 
-variable "cloudinit_disk_size" {
-  description = "Cloud-init disk size in MB"
-  type        = number
-  default     = 4
-  validation {
-    condition     = var.cloudinit_disk_size >= 1
-    error_message = "Cloud-init disk size must be at least 1 MB."
-  }
-}
-
 # Tags
 variable "common_tags" {
   description = "Common tags to apply to all resources"
