@@ -11,7 +11,7 @@ locals {
     }
     worker = {
       count        = var.worker_count
-      name_prefix  = "talos-worker"
+      name_prefix  = "talos-wrkr"
       vm_id_min    = var.worker_vm_id_min
       vm_id_max    = var.worker_vm_id_max
       ip_start     = var.worker_ip_start
