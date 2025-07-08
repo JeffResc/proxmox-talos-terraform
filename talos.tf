@@ -182,3 +182,14 @@ resource "talos_machine_configuration_apply" "worker" {
     })
   ]
 }
+
+# Generate kubeconfig for the cluster
+resource "talos_cluster_kubeconfig" "this" {
+  depends_on = [
+    talos_machine_bootstrap.this
+  ]
+
+  client_configuration = talos_machine_secrets.this.client_configuration
+  endpoint             = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
+  node                 = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
+}

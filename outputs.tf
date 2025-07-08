@@ -76,6 +76,12 @@ output "talos_client_configuration" {
   sensitive = true
 }
 
+output "talos_cluster_kubeconfig" {
+  description = "Talos cluster kubeconfig"
+  value       = talos_cluster_kubeconfig.this.kubeconfig_raw
+  sensitive   = true
+}
+
 output "proxmox_ccm_token" {
   description = "Proxmox Cloud Controller Manager API token"
   value       = proxmox_virtual_environment_user_token.ccm.value

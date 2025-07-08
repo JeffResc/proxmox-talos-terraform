@@ -5,19 +5,19 @@
 ### 1. Tofu Initialization
 
 ```bash
-tofu -chdir=talos-template init
+tofu init
 ```
 
 ### 2. Tofu Plan
 
 ```bash
-tofu -chdir=talos-template plan -out=tfplan
+tofu plan -out=tfplan
 ```
 
 ### 3. Tofu Apply
 
 ```bash
-tofu -chdir=talos-template apply tfplan
+tofu apply tfplan
 ```
 
 Once the apply is successful, you will have a Talos cluster running on Proxmox with the following components:
@@ -32,24 +32,15 @@ You must wait for the Talos machines to fully initialize. This can take a few mi
 After applying the Terraform configuration, export the Talos client configuration:
 
 ```sh
-tofu -chdir=talos-template output -raw talos_client_configuration > ~/.talos/config
+tofu output -raw talos_client_configuration > ~/.talos/config
 ```
 
 ### 5. Get Kubeconfig
 
-Once the cluster is up, retrieve the kubeconfig to interact with Kubernetes. You must specify a control plane IP when issuing `talosctl` commands. You can specify any of the control plane node IPs to get the kubeconfig. The IPs are calculated based on the `network_cidr` and `controlplane_ip_start` variables defined in the Terraform configuration.
-
-_Example_: The first control plane node IP is calculated from the network CIDR base + `controlplane_ip_start`. With `network_cidr="192.168.100.0/24"` and `controlplane_ip_start=10`, the first control plane node would be `192.168.100.10`.
+Once the cluster is up, retrieve the kubeconfig to interact with Kubernetes:
 
 ```sh
-# Check cluster health first (optional)
-talosctl --context talos-cluster health -n 192.168.100.10
-
-# Get and save the kubeconfig (specify a single control plane node)
-talosctl --context talos-cluster kubeconfig ~/.kube/talos_config -n 192.168.100.10
-
-# Or if you want to force overwrite existing kubeconfig
-talosctl --context talos-cluster kubeconfig ~/.kube/talos_config -n 192.168.100.10 --force
+tofu output -raw talos_cluster_kubeconfig > ~/.kube/talos_config
 ```
 
 **Note:** The control plane node IPs are calculated using the `cidrhost()` function in Terraform. The first control plane node IP is the network base address plus `controlplane_ip_start`. For example:
@@ -60,7 +51,6 @@ talosctl --context talos-cluster kubeconfig ~/.kube/talos_config -n 192.168.100.
 
 ```sh
 export KUBECONFIG=~/.kube/talos_config
-kubectl config use-context talos-cluster
 kubectl cluster-info dump
 kubectl get nodes
 kubectl get pods -A
@@ -103,6 +93,7 @@ No modules.
 | [proxmox_virtual_environment_vm.nodes](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
 | [proxmox_virtual_environment_vm.template](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
 | [random_integer.node_vm_id](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
+| [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/cluster_kubeconfig) | resource |
 | [talos_image_factory_schematic.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/image_factory_schematic) | resource |
 | [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_bootstrap) | resource |
 | [talos_machine_configuration_apply.controlplane](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_configuration_apply) | resource |
@@ -168,6 +159,7 @@ No modules.
 | <a name="output_controlplane_template_id"></a> [controlplane\_template\_id](#output\_controlplane\_template\_id) | Control plane template VM ID |
 | <a name="output_proxmox_ccm_token"></a> [proxmox\_ccm\_token](#output\_proxmox\_ccm\_token) | Proxmox Cloud Controller Manager API token |
 | <a name="output_talos_client_configuration"></a> [talos\_client\_configuration](#output\_talos\_client\_configuration) | Complete Talos client configuration for ~/.talos/config |
+| <a name="output_talos_cluster_kubeconfig"></a> [talos\_cluster\_kubeconfig](#output\_talos\_cluster\_kubeconfig) | Talos cluster kubeconfig |
 | <a name="output_talos_image_id"></a> [talos\_image\_id](#output\_talos\_image\_id) | Talos image ID in Proxmox |
 | <a name="output_talos_machine_secrets"></a> [talos\_machine\_secrets](#output\_talos\_machine\_secrets) | Talos machine secrets (sensitive) |
 | <a name="output_worker_ips"></a> [worker\_ips](#output\_worker\_ips) | List of worker IP addresses |
