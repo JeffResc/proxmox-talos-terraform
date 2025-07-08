@@ -131,10 +131,10 @@ No modules.
 | <a name="input_proxmox_api_token"></a> [proxmox\_api\_token](#input\_proxmox\_api\_token) | Proxmox API token in format 'user@realm!tokenname=token-secret' | `string` | n/a | yes |
 | <a name="input_proxmox_ccm_role"></a> [proxmox\_ccm\_role](#input\_proxmox\_ccm\_role) | Proxmox role for Cloud Controller Manager | `string` | `"TalosCCM"` | no |
 | <a name="input_proxmox_ccm_user"></a> [proxmox\_ccm\_user](#input\_proxmox\_ccm\_user) | Proxmox user for Cloud Controller Manager | `string` | `"talos-ccm@pve"` | no |
-| <a name="input_proxmox_endpoint"></a> [proxmox\_endpoint](#input\_proxmox\_endpoint) | n/a | `string` | `"https://your-proxmox:8006/"` | no |
-| <a name="input_proxmox_insecure"></a> [proxmox\_insecure](#input\_proxmox\_insecure) | n/a | `bool` | `false` | no |
+| <a name="input_proxmox_endpoint"></a> [proxmox\_endpoint](#input\_proxmox\_endpoint) | Proxmox Virtual Environment API endpoint URL | `string` | `"https://your-proxmox:8006/"` | no |
+| <a name="input_proxmox_insecure"></a> [proxmox\_insecure](#input\_proxmox\_insecure) | Skip TLS certificate verification for Proxmox API | `bool` | `false` | no |
 | <a name="input_talos_disk_image_datastore_id"></a> [talos\_disk\_image\_datastore\_id](#input\_talos\_disk\_image\_datastore\_id) | Datastore for downloading Talos disk images | `string` | `"local"` | no |
-| <a name="input_talos_version"></a> [talos\_version](#input\_talos\_version) | n/a | `string` | `"v1.10.5"` | no |
+| <a name="input_talos_version"></a> [talos\_version](#input\_talos\_version) | Version of Talos Linux to use | `string` | `"v1.10.5"` | no |
 | <a name="input_template_datastore_id"></a> [template\_datastore\_id](#input\_template\_datastore\_id) | Datastore for VM template disks | `string` | `"local-lvm"` | no |
 | <a name="input_template_node"></a> [template\_node](#input\_template\_node) | Proxmox node where VM templates are created | `string` | `"pve"` | no |
 | <a name="input_vm_datastore_id"></a> [vm\_datastore\_id](#input\_vm\_datastore\_id) | Datastore for VM initialization | `string` | `"local-lvm"` | no |
