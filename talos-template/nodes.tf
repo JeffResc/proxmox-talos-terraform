@@ -1,8 +1,8 @@
 # Random VM IDs for control plane nodes
 resource "random_integer" "controlplane_vm_id" {
   count = var.controlplane_count
-  min   = 2000
-  max   = 2999
+  min   = var.controlplane_vm_id_min
+  max   = var.controlplane_vm_id_max
   
   keepers = {
     index = count.index
@@ -39,6 +39,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [name, vm_id]
     replace_triggered_by = [
       proxmox_virtual_environment_vm.controlplane_template.id
     ]
@@ -53,8 +54,8 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
 # Random VM IDs for worker nodes
 resource "random_integer" "worker_vm_id" {
   count = var.worker_count
-  min   = 3000
-  max   = 3999
+  min   = var.worker_vm_id_min
+  max   = var.worker_vm_id_max
   
   keepers = {
     index = count.index
@@ -91,6 +92,7 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [name, vm_id]
     replace_triggered_by = [
       proxmox_virtual_environment_vm.worker_template.id
     ]
