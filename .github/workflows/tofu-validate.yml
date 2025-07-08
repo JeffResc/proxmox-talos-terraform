@@ -9,21 +9,21 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
           tofu_version: latest
-          
+
       - name: Tofu Format Check
         run: tofu fmt -check -recursive
-        
+
       - name: Tofu Init
         run: tofu init -backend=false
-        
+
       - name: Tofu Validate
         run: tofu validate

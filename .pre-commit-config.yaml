@@ -1,0 +1,56 @@
+# Copyright 2025 Defense Unicorns
+# SPDX-License-Identifier: LicenseRef-Defense-Unicorns-Commercial
+
+default_stages: [pre-commit, pre-push]
+exclude: "^/?vendored/.*$" # Exclude vendored code
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: detect-aws-credentials
+        args:
+          - "--allow-missing-credentials"
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: check-yaml
+        args:
+          - "--allow-multiple-documents"
+  - repo: https://github.com/sirosen/texthooks
+    rev: 0.6.8
+    hooks:
+      - id: fix-smartquotes
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.99.4
+    hooks:
+      - id: terraform_fmt
+        args:
+          - --hook-config=--tf-path=tofu
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+          - --hook-config=--tf-path=tofu
+  - repo: https://github.com/tofuutils/pre-commit-opentofu
+    rev: v2.2.1 # Get the latest from: https://github.com/tofuutils/pre-commit-opentofu/releases
+    hooks:
+      - id: tofu_docs
+        args:
+          - --args=--lockfile=false
+          - --hook-config=--path-to-file=README.md # Valid UNIX path. I.e. ../TFDOC.md or docs/README.md etc.
+          - --hook-config=--add-to-existing-file=true # Boolean. true or false
+          - --hook-config=--create-file-if-not-exist=true # Boolean. true or false
+          - --hook-config=--use-standard-markers=true
+  - repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 41.17.2
+    hooks:
+      - id: renovate-config-validator
+        language_version: "lts"
+  # - repo: https://github.com/yuvipanda/pre-commit-hook-ensure-sops
+  #   rev: v1.1
+  #   hooks:
+  #     - id: sops-encryption
