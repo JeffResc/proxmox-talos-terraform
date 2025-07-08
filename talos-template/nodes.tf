@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
   }
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
     ignore_changes        = [name, vm_id]
     replace_triggered_by = [
       proxmox_virtual_environment_vm.template["controlplane"].id,
@@ -97,7 +97,7 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
   }
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
     ignore_changes        = [name, vm_id]
     replace_triggered_by = [
       proxmox_virtual_environment_vm.template["worker"].id,
