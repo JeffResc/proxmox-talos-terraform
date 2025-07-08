@@ -72,11 +72,11 @@ data "talos_machine_configuration" "controlplane" {
               stringData:
                 config.yaml: |
                   clusters:
-                    - url: "${var.proxmox_endpoint}"
+                    - url: "${trimsuffix(var.proxmox_endpoint, "/")}/api2/json"
                       insecure: ${var.proxmox_insecure}
                       token_id: "${proxmox_virtual_environment_user_token.ccm.id}"
-                      token_secret: "${proxmox_virtual_environment_user_token.ccm.value}"
-                      region: "${var.node_name}"
+                      token_secret: "${split("=", proxmox_virtual_environment_user_token.ccm.value)[1]}"
+                      region: "${var.cluster_name}"
             EOF
           }
         ]
@@ -135,6 +135,18 @@ resource "talos_machine_configuration_apply" "controlplane" {
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
   endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
   node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
+  
+  config_patches = [
+    yamlencode({
+      machine = {
+        kubelet = {
+          extraArgs = {
+            provider-id = "proxmox://${var.cluster_name}/${proxmox_virtual_environment_vm.controlplane_nodes[count.index].vm_id}"
+          }
+        }
+      }
+    })
+  ]
 }
 
 # Apply configuration to all worker nodes
@@ -149,4 +161,16 @@ resource "talos_machine_configuration_apply" "worker" {
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
   node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
+  
+  config_patches = [
+    yamlencode({
+      machine = {
+        kubelet = {
+          extraArgs = {
+            provider-id = "proxmox://${var.cluster_name}/${proxmox_virtual_environment_vm.worker_nodes[count.index].vm_id}"
+          }
+        }
+      }
+    })
+  ]
 }
