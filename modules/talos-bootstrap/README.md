@@ -35,23 +35,24 @@ module "talos_bootstrap" {
 ```
 
 <!-- BEGIN_TF_DOCS -->
-### Requirements
+## Requirements
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
 | <a name="requirement_talos"></a> [talos](#requirement\_talos) | ~> 0.8.0 |
 
-### Providers
+## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_talos"></a> [talos](#provider\_talos) | ~> 0.8.0 |
+| <a name="provider_talos"></a> [talos](#provider\_talos) | 0.8.1 |
 
-### Modules
+## Modules
 
 No modules.
 
-### Resources
+## Resources
 
 | Name | Type |
 |------|------|
@@ -65,7 +66,7 @@ No modules.
 | [talos_machine_configuration.controlplane](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/machine_configuration) | data source |
 | [talos_machine_configuration.worker](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/machine_configuration) | data source |
 
-### Inputs
+## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
@@ -86,7 +87,7 @@ No modules.
 | <a name="input_talos_version"></a> [talos\_version](#input\_talos\_version) | Version of Talos Linux to use | `string` | `"v1.10.5"` | no |
 | <a name="input_worker_nodes"></a> [worker\_nodes](#input\_worker\_nodes) | Map of worker nodes with their endpoints and VM IDs | <pre>map(object({<br/>    endpoint = string<br/>    node     = string<br/>    vm_id    = string<br/>  }))</pre> | n/a | yes |
 
-### Outputs
+## Outputs
 
 | Name | Description |
 |------|-------------|

@@ -22,23 +22,24 @@ module "proxmox_ccm" {
 ```
 
 <!-- BEGIN_TF_DOCS -->
-### Requirements
+## Requirements
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.79.0 |
 
-### Providers
+## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | ~> 0.79.0 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.79.0 |
 
-### Modules
+## Modules
 
 No modules.
 
-### Resources
+## Resources
 
 | Name | Type |
 |------|------|
@@ -46,14 +47,14 @@ No modules.
 | [proxmox_virtual_environment_user.ccm](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_user) | resource |
 | [proxmox_virtual_environment_user_token.ccm](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_user_token) | resource |
 
-### Inputs
+## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_proxmox_ccm_role"></a> [proxmox\_ccm\_role](#input\_proxmox\_ccm\_role) | Proxmox role for Cloud Controller Manager | `string` | `"TalosCCM"` | no |
 | <a name="input_proxmox_ccm_user"></a> [proxmox\_ccm\_user](#input\_proxmox\_ccm\_user) | Proxmox user for Cloud Controller Manager | `string` | `"talos-ccm@pve"` | no |
 
-### Outputs
+## Outputs
 
 | Name | Description |
 |------|-------------|

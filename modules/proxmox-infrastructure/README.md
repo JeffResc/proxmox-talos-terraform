@@ -42,25 +42,26 @@ module "proxmox_infrastructure" {
 ```
 
 <!-- BEGIN_TF_DOCS -->
-### Requirements
+## Requirements
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.79.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.1 |
 
-### Providers
+## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | ~> 0.79.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | ~> 3.1 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.79.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
 
-### Modules
+## Modules
 
 No modules.
 
-### Resources
+## Resources
 
 | Name | Type |
 |------|------|
@@ -69,7 +70,7 @@ No modules.
 | [proxmox_virtual_environment_vm.template](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm) | resource |
 | [random_integer.node_vm_id](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
 
-### Inputs
+## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
@@ -107,7 +108,7 @@ No modules.
 | <a name="input_worker_vm_id_max"></a> [worker\_vm\_id\_max](#input\_worker\_vm\_id\_max) | Maximum VM ID for worker nodes | `number` | `3999` | no |
 | <a name="input_worker_vm_id_min"></a> [worker\_vm\_id\_min](#input\_worker\_vm\_id\_min) | Minimum VM ID for worker nodes | `number` | `3000` | no |
 
-### Outputs
+## Outputs
 
 | Name | Description |
 |------|-------------|
