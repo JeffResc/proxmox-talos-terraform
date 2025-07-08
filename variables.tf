@@ -237,23 +237,6 @@ variable "proxmox_api_token" {
   sensitive   = true
 }
 
-variable "proxmox_ssh_agent" {
-  description = "Use SSH agent for Proxmox SSH connection"
-  type        = bool
-  default     = false
-}
-
-variable "proxmox_ssh_username" {
-  description = "SSH username for Proxmox connection"
-  type        = string
-  default     = "root"
-}
-
-variable "proxmox_ssh_private_key_path" {
-  description = "Path to SSH private key for Proxmox connection"
-  type        = string
-}
-
 
 variable "network_bridge" {
   description = "Network bridge for VM network interfaces"
