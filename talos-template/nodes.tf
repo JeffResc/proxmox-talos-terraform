@@ -5,7 +5,8 @@ resource "random_integer" "controlplane_vm_id" {
   max   = var.controlplane_vm_id_max
   
   keepers = {
-    index = count.index
+    # Only regenerate VM ID when template changes
+    template_id = proxmox_virtual_environment_vm.controlplane_template.id
   }
 }
 
@@ -61,7 +62,8 @@ resource "random_integer" "worker_vm_id" {
   max   = var.worker_vm_id_max
   
   keepers = {
-    index = count.index
+    # Only regenerate VM ID when template changes
+    template_id = proxmox_virtual_environment_vm.worker_template.id
   }
 }
 
