@@ -75,11 +75,9 @@ variable "cluster_endpoint" {
   default     = "https://192.168.0.100:6443"
 }
 
-
 variable "network_cidr" {
   description = "Network CIDR for node IP addresses (ignored when enable_dhcp is true)"
   type        = string
-  default     = "192.168.0.0/24"
   validation {
     condition     = can(cidrhost(var.network_cidr, 0))
     error_message = "Network CIDR must be a valid CIDR notation."
@@ -89,7 +87,6 @@ variable "network_cidr" {
 variable "network_gateway" {
   description = "Network gateway IP address (ignored when enable_dhcp is true)"
   type        = string
-  default     = "192.168.0.1"
 }
 
 variable "controlplane_ip_start" {
@@ -115,7 +112,7 @@ variable "worker_ip_start" {
 variable "dns_servers" {
   description = "List of DNS servers for Talos nodes (applied regardless of enable_dhcp setting)"
   type        = list(string)
-  default     = ["192.168.0.1", "1.1.1.1", "1.0.0.1"]
+  default     = ["1.1.1.1", "1.0.0.1"]
 }
 
 variable "proxmox_ccm_user" {
@@ -143,7 +140,7 @@ variable "controlplane_vm_id_min" {
 variable "controlplane_vm_id_max" {
   description = "Maximum VM ID for control plane nodes"
   type        = number
-  default     = 2099
+  default     = 2999
   validation {
     condition     = var.controlplane_vm_id_max > 0 && var.controlplane_vm_id_max < 10000
     error_message = "Control plane VM ID max must be between 1 and 9999."
@@ -153,7 +150,7 @@ variable "controlplane_vm_id_max" {
 variable "worker_vm_id_min" {
   description = "Minimum VM ID for worker nodes"
   type        = number
-  default     = 2100
+  default     = 3000
   validation {
     condition     = var.worker_vm_id_min > 0 && var.worker_vm_id_min < 9999
     error_message = "Worker VM ID min must be between 1 and 9998."
@@ -163,7 +160,7 @@ variable "worker_vm_id_min" {
 variable "worker_vm_id_max" {
   description = "Maximum VM ID for worker nodes"
   type        = number
-  default     = 2199
+  default     = 3999
   validation {
     condition     = var.worker_vm_id_max > 0 && var.worker_vm_id_max < 10000
     error_message = "Worker VM ID max must be between 1 and 9999."
