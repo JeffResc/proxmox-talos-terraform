@@ -75,12 +75,12 @@ data "talos_machine_configuration" "controlplane" {
           enabled = true
           manifests = [
             "https://raw.githubusercontent.com/sergelogvinov/proxmox-cloud-controller-manager/v0.9.0/docs/deploy/cloud-controller-manager.yml",
-            "https://raw.githubusercontent.com/fluxcd/flux2/refs/tags/v2.6.4/manifests/install/namespace.yaml",
-            "https://raw.githubusercontent.com/fluxcd/flux2/tags/v2.6.4/manifests/bases/",
-            "https://raw.githubusercontent.com/fluxcd/flux2/tags/v2.6.4/main/manifests/rbac/",
-            "https://raw.githubusercontent.com/fluxcd/flux2/refs/tags/v2.6.4/manifests/policies/",
+            "https://github.com/fluxcd/flux2/releases/download/v2.6.4/install.yaml",
             "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/refs/tags/v1.10.1/docs/deploy/cloud-controller-manager.yml",
-            "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.83.0/example/prometheus-operator-crd-full/"
+            "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.83.0/example/prometheus-operator-crd-full/monitoring.coreos.com_alertmanagers.yaml",
+            "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.83.0/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheuses.yaml",
+            "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.83.0/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheusrules.yaml",
+            "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.83.0/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml"
           ]
         }
       }
