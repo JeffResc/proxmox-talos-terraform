@@ -1,4 +1,4 @@
-# homelab
+# proxmox-talos-terraform
 
 ## Getting Started
 
