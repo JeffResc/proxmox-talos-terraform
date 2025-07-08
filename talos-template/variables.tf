@@ -173,3 +173,9 @@ variable "enable_vip" {
   type        = bool
   default     = true
 }
+
+variable "network_interface" {
+  description = "Network interface name for node network configuration"
+  type        = string
+  default     = "eth0"
+}
