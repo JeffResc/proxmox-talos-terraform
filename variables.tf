@@ -1,16 +1,19 @@
 variable "proxmox_endpoint" {
-  type    = string
-  default = "https://your-proxmox:8006/"
+  description = "Proxmox Virtual Environment API endpoint URL"
+  type        = string
+  default     = "https://your-proxmox:8006/"
 }
 
 variable "proxmox_insecure" {
-  type    = bool
-  default = false
+  description = "Skip TLS certificate verification for Proxmox API"
+  type        = bool
+  default     = false
 }
 
 variable "talos_version" {
-  type    = string
-  default = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
+  description = "Version of Talos Linux to use"
+  type        = string
+  default     = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
 }
 
 variable "talos_disk_image_datastore_id" {
