@@ -45,13 +45,17 @@ data "talos_machine_configuration" "controlplane" {
       machine = {
         network = {
           interfaces = [
-            {
-              interface = "eth0"
-              dhcp      = var.enable_dhcp
-              vip = {
-                ip = regex("https?://([^:]+)", var.cluster_endpoint)[0]
-              }
-            }
+            merge(
+              {
+                interface = "eth0"
+                dhcp      = var.enable_dhcp
+              },
+              var.enable_vip ? {
+                vip = {
+                  ip = regex("https?://([^:]+)", var.cluster_endpoint)[0]
+                }
+              } : {}
+            )
           ]
         }
       }

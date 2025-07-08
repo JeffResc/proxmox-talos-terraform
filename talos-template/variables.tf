@@ -174,3 +174,8 @@ variable "enable_dhcp" {
   default     = false
 }
 
+variable "enable_vip" {
+  description = "Enable VIP (Virtual IP) for controlplane nodes"
+  type        = bool
+  default     = true
+}
