@@ -237,23 +237,6 @@ variable "proxmox_api_token" {
   sensitive   = true
 }
 
-variable "proxmox_ssh_agent" {
-  description = "Use SSH agent for Proxmox SSH connection"
-  type        = bool
-  default     = false
-}
-
-variable "proxmox_ssh_username" {
-  description = "SSH username for Proxmox connection"
-  type        = string
-  default     = "root"
-}
-
-variable "proxmox_ssh_private_key_path" {
-  description = "Path to SSH private key for Proxmox connection"
-  type        = string
-}
-
 
 variable "network_bridge" {
   description = "Network bridge for VM network interfaces"
@@ -282,7 +265,6 @@ variable "worker_template_id" {
   }
 }
 
-
 # Disk Sizes (in GB)
 variable "controlplane_disk_size" {
   description = "Disk size for control plane nodes in GB"
@@ -309,6 +291,12 @@ variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = list(string)
   default     = ["talos", "terraform"]
+}
+
+variable "extra_tags" {
+  type        = list(string)
+  description = "Extra tags to add to resources"
+  default     = []
 }
 
 variable "template_node" {

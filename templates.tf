@@ -23,7 +23,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   node_name = var.template_node
   vm_id     = each.value.vm_id
   template  = true
-  tags      = concat(var.common_tags, [each.value.tag])
+  tags      = concat(var.common_tags, var.extra_tags, [each.value.tag])
 
   disk {
     datastore_id = var.template_datastore_id

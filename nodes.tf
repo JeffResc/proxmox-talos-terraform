@@ -1,9 +1,5 @@
 # Node configuration
 locals {
-  # Calculate total counts for each node type
-  total_controlplane_count = sum([for node_name, config in var.node_distribution : config.controlplane_count])
-  total_worker_count       = sum([for node_name, config in var.node_distribution : config.worker_count])
-
   # Flatten node configurations for iteration across multiple Proxmox nodes
   nodes = flatten([
     for node_name, config in var.node_distribution : [
@@ -70,7 +66,7 @@ resource "proxmox_virtual_environment_vm" "nodes" {
   name      = "${each.value.name_prefix}-${random_integer.node_vm_id[each.key].result}"
   node_name = each.value.proxmox_node_name
   vm_id     = random_integer.node_vm_id[each.key].result
-  tags      = concat(var.common_tags, [each.value.type])
+  tags      = concat(var.common_tags, var.extra_tags, [each.value.type])
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template[each.value.template_key].vm_id

@@ -86,22 +86,22 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_download_file) | resource |
-| [proxmox_virtual_environment_role.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_role) | resource |
-| [proxmox_virtual_environment_user.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_user) | resource |
-| [proxmox_virtual_environment_user_token.ccm](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_user_token) | resource |
-| [proxmox_virtual_environment_vm.nodes](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
-| [proxmox_virtual_environment_vm.template](https://registry.terraform.io/providers/bpg/proxmox/0.79.0/docs/resources/virtual_environment_vm) | resource |
-| [random_integer.node_vm_id](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
-| [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/cluster_kubeconfig) | resource |
-| [talos_image_factory_schematic.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/image_factory_schematic) | resource |
-| [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_bootstrap) | resource |
-| [talos_machine_configuration_apply.controlplane](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_configuration_apply) | resource |
-| [talos_machine_configuration_apply.worker](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_configuration_apply) | resource |
-| [talos_machine_secrets.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/resources/machine_secrets) | resource |
-| [talos_image_factory_extensions_versions.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/image_factory_extensions_versions) | data source |
-| [talos_machine_configuration.controlplane](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/machine_configuration) | data source |
-| [talos_machine_configuration.worker](https://registry.terraform.io/providers/siderolabs/talos/0.8.1/docs/data-sources/machine_configuration) | data source |
+| proxmox_virtual_environment_download_file.talos_image | resource |
+| proxmox_virtual_environment_role.ccm | resource |
+| proxmox_virtual_environment_user.ccm | resource |
+| proxmox_virtual_environment_user_token.ccm | resource |
+| proxmox_virtual_environment_vm.nodes | resource |
+| proxmox_virtual_environment_vm.template | resource |
+| random_integer.node_vm_id | resource |
+| talos_cluster_kubeconfig.this | resource |
+| talos_image_factory_schematic.this | resource |
+| talos_machine_bootstrap.this | resource |
+| talos_machine_configuration_apply.controlplane | resource |
+| talos_machine_configuration_apply.worker | resource |
+| talos_machine_secrets.this | resource |
+| talos_image_factory_extensions_versions.this | data source |
+| talos_machine_configuration.controlplane | data source |
+| talos_machine_configuration.worker | data source |
 
 ### Inputs
 
@@ -121,6 +121,7 @@ No modules.
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers for Talos nodes | `list(string)` | <pre>[<br/>  "192.168.0.1",<br/>  "1.1.1.1",<br/>  "1.0.0.1"<br/>]</pre> | no |
 | <a name="input_enable_dhcp"></a> [enable\_dhcp](#input\_enable\_dhcp) | Enable DHCP for node network interfaces | `bool` | `false` | no |
 | <a name="input_enable_vip"></a> [enable\_vip](#input\_enable\_vip) | Enable VIP (Virtual IP) for controlplane nodes | `bool` | `true` | no |
+| <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | Extra tags to add to resources | `list(string)` | `[]` | no |
 | <a name="input_image_download_node"></a> [image\_download\_node](#input\_image\_download\_node) | Proxmox node where Talos disk images are downloaded | `string` | `"pve"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Network bridge for VM network interfaces | `string` | `"vmbr0"` | no |
 | <a name="input_network_cidr"></a> [network\_cidr](#input\_network\_cidr) | Network CIDR for node IP addresses | `string` | `"192.168.0.0/24"` | no |
@@ -132,9 +133,6 @@ No modules.
 | <a name="input_proxmox_ccm_user"></a> [proxmox\_ccm\_user](#input\_proxmox\_ccm\_user) | Proxmox user for Cloud Controller Manager | `string` | `"talos-ccm@pve"` | no |
 | <a name="input_proxmox_endpoint"></a> [proxmox\_endpoint](#input\_proxmox\_endpoint) | n/a | `string` | `"https://your-proxmox:8006/"` | no |
 | <a name="input_proxmox_insecure"></a> [proxmox\_insecure](#input\_proxmox\_insecure) | n/a | `bool` | `false` | no |
-| <a name="input_proxmox_ssh_agent"></a> [proxmox\_ssh\_agent](#input\_proxmox\_ssh\_agent) | Use SSH agent for Proxmox SSH connection | `bool` | `false` | no |
-| <a name="input_proxmox_ssh_private_key_path"></a> [proxmox\_ssh\_private\_key\_path](#input\_proxmox\_ssh\_private\_key\_path) | Path to SSH private key for Proxmox connection | `string` | n/a | yes |
-| <a name="input_proxmox_ssh_username"></a> [proxmox\_ssh\_username](#input\_proxmox\_ssh\_username) | SSH username for Proxmox connection | `string` | `"root"` | no |
 | <a name="input_talos_disk_image_datastore_id"></a> [talos\_disk\_image\_datastore\_id](#input\_talos\_disk\_image\_datastore\_id) | Datastore for downloading Talos disk images | `string` | `"local"` | no |
 | <a name="input_talos_version"></a> [talos\_version](#input\_talos\_version) | n/a | `string` | `"v1.10.5"` | no |
 | <a name="input_template_datastore_id"></a> [template\_datastore\_id](#input\_template\_datastore\_id) | Datastore for VM template disks | `string` | `"local-lvm"` | no |
