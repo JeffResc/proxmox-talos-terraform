@@ -182,3 +182,19 @@ resource "talos_machine_configuration_apply" "worker" {
     })
   ]
 }
+data "talos_cluster_health" "this" {
+  depends_on = [
+    talos_machine_configuration_apply.controlplane,
+    talos_machine_configuration_apply.worker,
+    talos_machine_bootstrap.this,
+  ]
+
+  client_configuration = talos_machine_secrets.this.client_configuration
+  endpoints = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    if startswith(k, "controlplane-")
+  ]
+  nodes = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+  ]
+}
