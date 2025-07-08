@@ -61,7 +61,6 @@ output "talos_client_configuration" {
   value = templatefile("${path.module}/talos-client-config.yaml", {
     cluster_name       = var.cluster_name
     talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_endpoint)[0]}:50000"
-    node_ips           = [for i in range(var.controlplane_count) : cidrhost(var.network_cidr, var.controlplane_ip_start + i)]
     ca_certificate     = talos_machine_secrets.this.client_configuration.ca_certificate
     client_certificate = talos_machine_secrets.this.client_configuration.client_certificate
     client_key         = talos_machine_secrets.this.client_configuration.client_key

@@ -25,10 +25,13 @@ resource "proxmox_virtual_environment_vm" "controlplane_nodes" {
     
     user_data_file_id = proxmox_virtual_environment_file.controlplane_node_cloud_init[count.index].id
     
-    ip_config {
-      ipv4 {
-        address = "${cidrhost(var.network_cidr, var.controlplane_ip_start + count.index)}/${local.network_mask}"
-        gateway = var.network_gateway
+    dynamic "ip_config" {
+      for_each = var.enable_dhcp ? [] : [1]
+      content {
+        ipv4 {
+          address = "${cidrhost(var.network_cidr, var.controlplane_ip_start + count.index)}/${local.network_mask}"
+          gateway = var.network_gateway
+        }
       }
     }
     
@@ -78,10 +81,13 @@ resource "proxmox_virtual_environment_vm" "worker_nodes" {
     
     user_data_file_id = proxmox_virtual_environment_file.worker_node_cloud_init[count.index].id
     
-    ip_config {
-      ipv4 {
-        address = "${cidrhost(var.network_cidr, var.worker_ip_start + count.index)}/${local.network_mask}"
-        gateway = var.network_gateway
+    dynamic "ip_config" {
+      for_each = var.enable_dhcp ? [] : [1]
+      content {
+        ipv4 {
+          address = "${cidrhost(var.network_cidr, var.worker_ip_start + count.index)}/${local.network_mask}"
+          gateway = var.network_gateway
+        }
       }
     }
     

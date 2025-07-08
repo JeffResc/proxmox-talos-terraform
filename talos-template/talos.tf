@@ -48,7 +48,7 @@ data "talos_machine_configuration" "controlplane" {
             merge(
               {
                 interface = "eth0"
-                dhcp      = false
+                dhcp      = var.enable_dhcp
               },
               var.enable_vip ? {
                 vip = {
@@ -104,7 +104,7 @@ data "talos_machine_configuration" "worker" {
           interfaces = [
             {
               interface = "eth0"
-              dhcp      = false
+              dhcp      = var.enable_dhcp
             }
           ]
         }
@@ -120,8 +120,8 @@ resource "talos_machine_bootstrap" "this" {
   ]
   
   client_configuration = talos_machine_secrets.this.client_configuration
-  endpoint             = cidrhost(var.network_cidr, var.controlplane_ip_start)
-  node                 = cidrhost(var.network_cidr, var.controlplane_ip_start)
+  endpoint             = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
+  node                 = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
 }
 
 # Apply configuration to all controlplane nodes
@@ -133,8 +133,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
   count                       = var.controlplane_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  endpoint                    = cidrhost(var.network_cidr, var.controlplane_ip_start + count.index)
-  node                        = cidrhost(var.network_cidr, var.controlplane_ip_start + count.index)
+  endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
+  node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
 }
 
 # Apply configuration to all worker nodes
@@ -147,6 +147,6 @@ resource "talos_machine_configuration_apply" "worker" {
   count                       = var.worker_count
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  endpoint                    = cidrhost(var.network_cidr, var.worker_ip_start + count.index)
-  node                        = cidrhost(var.network_cidr, var.worker_ip_start + count.index)
+  endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
+  node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
 }
