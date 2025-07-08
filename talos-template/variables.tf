@@ -25,14 +25,8 @@ variable "template_datastore_id" {
   default     = "local-lvm"
 }
 
-variable "snippets_datastore_id" {
-  description = "Datastore for cloud-init snippets"
-  type        = string
-  default     = "local"
-}
-
 variable "vm_datastore_id" {
-  description = "Datastore for VM initialization and cloud-init"
+  description = "Datastore for VM initialization"
   type        = string
   default     = "local-lvm"
 }
