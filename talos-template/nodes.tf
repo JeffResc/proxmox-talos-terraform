@@ -43,8 +43,7 @@ resource "random_integer" "node_vm_id" {
   max      = each.value.vm_id_max
 
   keepers = {
-    # Only regenerate VM ID when template changes
-    template_id = proxmox_virtual_environment_vm.template[each.value.template_key].id
+    cluster_name = var.cluster_name
   }
 }
 
