@@ -68,3 +68,9 @@ output "talos_client_configuration" {
   })
   sensitive = true
 }
+
+output "proxmox_ccm_token" {
+  description = "Proxmox Cloud Controller Manager API token"
+  value       = proxmox_virtual_environment_user_token.ccm.value
+  sensitive   = true
+}
