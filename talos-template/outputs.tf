@@ -1,22 +1,24 @@
 output "controlplane_nodes" {
   description = "Control plane node information"
   value = {
-    for i in range(var.controlplane_count) : "talos-cp-${i + 1}" => {
-      vm_id      = proxmox_virtual_environment_vm.controlplane_nodes[i].vm_id
-      ip_address = proxmox_virtual_environment_vm.controlplane_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[i].network_interface_names, var.network_interface)][0]
-      name       = proxmox_virtual_environment_vm.controlplane_nodes[i].name
+    for k, v in proxmox_virtual_environment_vm.nodes : k => {
+      vm_id      = v.vm_id
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      name       = v.name
     }
+    if startswith(k, "controlplane-")
   }
 }
 
 output "worker_nodes" {
   description = "Worker node information"
   value = {
-    for i in range(var.worker_count) : "talos-worker-${i + 1}" => {
-      vm_id      = proxmox_virtual_environment_vm.worker_nodes[i].vm_id
-      ip_address = proxmox_virtual_environment_vm.worker_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[i].network_interface_names, var.network_interface)][0]
-      name       = proxmox_virtual_environment_vm.worker_nodes[i].name
+    for k, v in proxmox_virtual_environment_vm.nodes : k => {
+      vm_id      = v.vm_id
+      ip_address = v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+      name       = v.name
     }
+    if startswith(k, "worker-")
   }
 }
 
@@ -48,12 +50,18 @@ output "talos_machine_secrets" {
 
 output "controlplane_ips" {
   description = "List of control plane IP addresses"
-  value       = [for i in range(var.controlplane_count) : proxmox_virtual_environment_vm.controlplane_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[i].network_interface_names, var.network_interface)][0]]
+  value = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    if startswith(k, "controlplane-")
+  ]
 }
 
 output "worker_ips" {
   description = "List of worker IP addresses"
-  value       = [for i in range(var.worker_count) : proxmox_virtual_environment_vm.worker_nodes[i].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[i].network_interface_names, var.network_interface)][0]]
+  value = [
+    for k, v in proxmox_virtual_environment_vm.nodes : v.ipv4_addresses[index(v.network_interface_names, var.network_interface)][0]
+    if startswith(k, "worker-")
+  ]
 }
 
 output "talos_client_configuration" {
