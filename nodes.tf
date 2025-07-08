@@ -2,8 +2,8 @@
 locals {
   # Calculate total counts for each node type
   total_controlplane_count = sum([for node_name, config in var.node_distribution : config.controlplane_count])
-  total_worker_count = sum([for node_name, config in var.node_distribution : config.worker_count])
-  
+  total_worker_count       = sum([for node_name, config in var.node_distribution : config.worker_count])
+
   # Flatten node configurations for iteration across multiple Proxmox nodes
   nodes = flatten([
     for node_name, config in var.node_distribution : [
@@ -20,13 +20,13 @@ locals {
         index             = i
         # Calculate global index for IP assignment
         global_index = sum(concat([0], [
-          for other_node_name, other_config in var.node_distribution : 
+          for other_node_name, other_config in var.node_distribution :
           other_config.controlplane_count if index(keys(var.node_distribution), other_node_name) < index(keys(var.node_distribution), node_name)
         ])) + i
       }
     ] if config.controlplane_count > 0
-  ]) 
-  
+  ])
+
   # Flatten worker nodes separately
   worker_nodes = flatten([
     for node_name, config in var.node_distribution : [
@@ -42,13 +42,13 @@ locals {
         index             = i
         # Calculate global index for IP assignment
         global_index = sum(concat([0], [
-          for other_node_name, other_config in var.node_distribution : 
+          for other_node_name, other_config in var.node_distribution :
           other_config.worker_count if index(keys(var.node_distribution), other_node_name) < index(keys(var.node_distribution), node_name)
         ])) + i
       }
     ] if config.worker_count > 0
   ])
-  
+
   # Combine all nodes
   all_nodes = concat(local.nodes, local.worker_nodes)
 }

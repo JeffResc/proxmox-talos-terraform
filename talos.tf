@@ -23,7 +23,7 @@ resource "talos_image_factory_schematic" "this" {
 resource "proxmox_virtual_environment_download_file" "talos_image" {
   content_type = "import"
   datastore_id = var.talos_disk_image_datastore_id
-  node_name    = keys(var.node_distribution)[0]
+  node_name    = var.image_download_node
   file_name    = local.talos_image_filename
   url          = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/nocloud-amd64.qcow2"
   overwrite    = true

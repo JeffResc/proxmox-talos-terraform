@@ -45,7 +45,7 @@ variable "node_distribution" {
   }
   validation {
     condition = alltrue([
-      for node_name, config in var.node_distribution : 
+      for node_name, config in var.node_distribution :
       config.controlplane_count >= 0 && config.worker_count >= 0
     ])
     error_message = "Node counts must be zero or positive."
@@ -53,7 +53,7 @@ variable "node_distribution" {
   validation {
     condition = sum([
       for node_name, config in var.node_distribution : config.controlplane_count
-    ]) > 0 && sum([
+      ]) > 0 && sum([
       for node_name, config in var.node_distribution : config.controlplane_count
     ]) % 2 == 1
     error_message = "Total control plane count must be a positive odd number for HA."
@@ -229,4 +229,16 @@ variable "network_interface" {
   description = "Network interface name for node network configuration"
   type        = string
   default     = "eth0"
+}
+
+variable "template_node" {
+  description = "Proxmox node where VM templates are created"
+  type        = string
+  default     = "pve"
+}
+
+variable "image_download_node" {
+  description = "Proxmox node where Talos disk images are downloaded"
+  type        = string
+  default     = "pve"
 }

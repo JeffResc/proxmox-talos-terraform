@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   }
 
   name      = each.value.name
-  node_name = keys(var.node_distribution)[0]
+  node_name = var.template_node
   vm_id     = each.value.vm_id
   template  = true
   tags      = concat(local.common_tags, [each.value.tag])
