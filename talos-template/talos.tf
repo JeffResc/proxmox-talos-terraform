@@ -34,7 +34,9 @@ resource "talos_machine_secrets" "this" {
   talos_version = var.talos_version
 }
 
-data "talos_machine_configuration" "controlplane" {
+# Node-specific controlplane configurations
+data "talos_machine_configuration" "controlplane_nodes" {
+  count            = var.controlplane_count
   cluster_name     = var.cluster_name
   machine_type     = "controlplane"
   cluster_endpoint = var.cluster_endpoint
@@ -57,6 +59,11 @@ data "talos_machine_configuration" "controlplane" {
               } : {}
             )
           ]
+        }
+        kubelet = {
+          extraArgs = {
+            provider-id = "proxmox://${var.cluster_name}/${random_integer.controlplane_vm_id[count.index].result}"
+          }
         }
       }
       cluster = {
@@ -91,7 +98,9 @@ data "talos_machine_configuration" "controlplane" {
   ]
 }
 
-data "talos_machine_configuration" "worker" {
+# Node-specific worker configurations
+data "talos_machine_configuration" "worker_nodes" {
+  count            = var.worker_count
   cluster_name     = var.cluster_name
   machine_type     = "worker"
   cluster_endpoint = var.cluster_endpoint
@@ -108,6 +117,11 @@ data "talos_machine_configuration" "worker" {
             }
           ]
         }
+        kubelet = {
+          extraArgs = {
+            provider-id = "proxmox://${var.cluster_name}/${random_integer.worker_vm_id[count.index].result}"
+          }
+        }
       }
     })
   ]
@@ -122,55 +136,4 @@ resource "talos_machine_bootstrap" "this" {
   client_configuration = talos_machine_secrets.this.client_configuration
   endpoint             = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
   node                 = proxmox_virtual_environment_vm.controlplane_nodes[0].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[0].network_interface_names, "eth0")][0]
-}
-
-# Apply configuration to all controlplane nodes
-resource "talos_machine_configuration_apply" "controlplane" {
-  depends_on = [
-    proxmox_virtual_environment_vm.controlplane_nodes
-  ]
-  
-  count                       = var.controlplane_count
-  client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  endpoint                    = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
-  node                        = proxmox_virtual_environment_vm.controlplane_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.controlplane_nodes[count.index].network_interface_names, "eth0")][0]
-  
-  config_patches = [
-    yamlencode({
-      machine = {
-        kubelet = {
-          extraArgs = {
-            provider-id = "proxmox://${var.cluster_name}/${proxmox_virtual_environment_vm.controlplane_nodes[count.index].vm_id}"
-          }
-        }
-      }
-    })
-  ]
-}
-
-# Apply configuration to all worker nodes
-resource "talos_machine_configuration_apply" "worker" {
-  depends_on = [
-    proxmox_virtual_environment_vm.worker_nodes,
-    talos_machine_bootstrap.this
-  ]
-  
-  count                       = var.worker_count
-  client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  endpoint                    = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
-  node                        = proxmox_virtual_environment_vm.worker_nodes[count.index].ipv4_addresses[index(proxmox_virtual_environment_vm.worker_nodes[count.index].network_interface_names, "eth0")][0]
-  
-  config_patches = [
-    yamlencode({
-      machine = {
-        kubelet = {
-          extraArgs = {
-            provider-id = "proxmox://${var.cluster_name}/${proxmox_virtual_environment_vm.worker_nodes[count.index].vm_id}"
-          }
-        }
-      }
-    })
-  ]
 }
