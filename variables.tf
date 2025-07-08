@@ -94,11 +94,11 @@ variable "cluster_endpoint_override" {
   type        = string
   default     = null
   validation {
-    condition = var.cluster_endpoint_override == null || can(regex("^https?://", var.cluster_endpoint_override))
+    condition     = var.cluster_endpoint_override == null || can(regex("^https?://", var.cluster_endpoint_override))
     error_message = "Cluster endpoint override must be a valid URL starting with http:// or https://"
   }
   validation {
-    condition = var.cluster_vip_enabled || var.cluster_endpoint_override != null
+    condition     = var.cluster_vip_enabled || var.cluster_endpoint_override != null
     error_message = "cluster_endpoint_override must be provided when cluster_vip_enabled is false"
   }
 }
