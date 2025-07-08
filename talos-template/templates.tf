@@ -36,12 +36,12 @@ resource "proxmox_virtual_environment_vm" "template" {
     dedicated = each.value.memory
     floating  = each.value.memory
   }
-  
+
   cpu {
     cores = each.value.cpu_cores
     type  = local.cpu_type
   }
-  
+
   network_device {
     bridge = local.network_bridge
   }
@@ -53,7 +53,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   agent {
     enabled = true
   }
-  
+
   lifecycle {
     replace_triggered_by = [
       proxmox_virtual_environment_download_file.talos_image.id
