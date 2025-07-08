@@ -17,7 +17,7 @@ variable "proxmox_api_token" {
 variable "proxmox_ssh_agent" {
   description = "Use SSH agent for Proxmox SSH connection"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "proxmox_ssh_username" {
@@ -29,7 +29,6 @@ variable "proxmox_ssh_username" {
 variable "proxmox_ssh_private_key_path" {
   description = "Path to SSH private key for Proxmox connection"
   type        = string
-  default     = "~/.ssh/id_rsa"
 }
 
 variable "talos_version" {
@@ -66,6 +65,12 @@ variable "node_name" {
   default = "pve"
 }
 
+variable "network_bridge" {
+  description = "Network bridge for VM network interfaces"
+  type        = string
+  default     = "vmbr0"
+}
+
 variable "cluster_name" {
   description = "Name of the Talos cluster"
   type        = string
@@ -75,7 +80,6 @@ variable "cluster_name" {
 variable "cluster_endpoint" {
   description = "Cluster endpoint URL"
   type        = string
-  default     = "https://192.168.0.100:6443"
 }
 
 variable "controlplane_count" {
@@ -101,7 +105,6 @@ variable "worker_count" {
 variable "network_cidr" {
   description = "Network CIDR for node IP addresses"
   type        = string
-  default     = "192.168.0.0/24"
   validation {
     condition     = can(cidrhost(var.network_cidr, 0))
     error_message = "Network CIDR must be a valid CIDR notation."
@@ -111,7 +114,6 @@ variable "network_cidr" {
 variable "network_gateway" {
   description = "Network gateway IP address"
   type        = string
-  default     = "192.168.0.1"
 }
 
 variable "controlplane_ip_start" {
@@ -137,6 +139,6 @@ variable "worker_ip_start" {
 variable "dns_servers" {
   description = "List of DNS servers for Talos nodes"
   type        = list(string)
-  default     = ["192.168.0.1", "1.1.1.1", "1.0.0.1"]
+  default     = ["1.1.1.1", "8.8.8.8", "8.8.4.4"]
 }
 

@@ -25,7 +25,7 @@ resource "proxmox_virtual_environment_vm" "controlplane_template" {
   }
 
   network_device {
-    bridge = local.network_bridge
+    bridge = var.network_bridge
   }
 
   operating_system {
@@ -65,7 +65,7 @@ resource "proxmox_virtual_environment_vm" "worker_template" {
   }
 
   network_device {
-    bridge = local.network_bridge
+    bridge = var.network_bridge
   }
 
   operating_system {

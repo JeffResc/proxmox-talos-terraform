@@ -23,8 +23,7 @@ locals {
   cpu_type               = "x86-64-v2-AES"
 
   # Network configuration
-  network_bridge = "vmbr0"
-  network_mask   = split("/", var.network_cidr)[1]
+  network_mask = split("/", var.network_cidr)[1]
 
   # File names
   talos_image_filename = "talos-${var.talos_version}-amd64.iso"
