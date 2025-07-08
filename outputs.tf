@@ -68,7 +68,7 @@ output "talos_client_configuration" {
   description = "Complete Talos client configuration for ~/.talos/config"
   value = templatefile("${path.module}/talos-client-config.yaml", {
     cluster_name       = var.cluster_name
-    talos_endpoint     = "${regex("https?://([^:]+)", var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override)[0]}:50000"
+    talos_endpoint     = var.cluster_vip_enabled ? var.cluster_vip_ip : regex("https?://([^:]+)", var.cluster_endpoint_override)[0]
     ca_certificate     = module.talos_bootstrap.client_configuration.ca_certificate
     client_certificate = module.talos_bootstrap.client_configuration.client_certificate
     client_key         = module.talos_bootstrap.client_configuration.client_key
