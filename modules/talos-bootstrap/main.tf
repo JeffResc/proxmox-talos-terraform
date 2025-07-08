@@ -20,15 +20,6 @@ resource "talos_image_factory_schematic" "this" {
   )
 }
 
-resource "proxmox_virtual_environment_download_file" "talos_image" {
-  content_type = "import"
-  datastore_id = var.talos_disk_image_datastore_id
-  node_name    = var.image_download_node
-  file_name    = local.talos_image_filename
-  url          = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/nocloud-amd64.qcow2"
-  overwrite    = true
-}
-
 # Generate Talos configurations
 resource "talos_machine_secrets" "this" {
   talos_version = var.talos_version
@@ -37,7 +28,7 @@ resource "talos_machine_secrets" "this" {
 data "talos_machine_configuration" "controlplane" {
   cluster_name     = var.cluster_name
   machine_type     = "controlplane"
-  cluster_endpoint = local.cluster_endpoint
+  cluster_endpoint = var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
   config_patches = [
@@ -74,8 +65,8 @@ data "talos_machine_configuration" "controlplane" {
                   clusters:
                     - url: "${trimsuffix(var.proxmox_endpoint, "/")}/api2/json"
                       insecure: ${var.proxmox_insecure}
-                      token_id: "${proxmox_virtual_environment_user_token.ccm.id}"
-                      token_secret: "${split("=", proxmox_virtual_environment_user_token.ccm.value)[1]}"
+                      token_id: "${var.ccm_token_id}"
+                      token_secret: "${var.ccm_token_secret}"
                       region: "${var.cluster_name}"
             EOF
           }
@@ -94,7 +85,7 @@ data "talos_machine_configuration" "controlplane" {
 data "talos_machine_configuration" "worker" {
   cluster_name     = var.cluster_name
   machine_type     = "worker"
-  cluster_endpoint = local.cluster_endpoint
+  cluster_endpoint = var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
   config_patches = [
@@ -120,25 +111,22 @@ resource "talos_machine_bootstrap" "this" {
   ]
 
   client_configuration = talos_machine_secrets.this.client_configuration
-  endpoint             = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
-  node                 = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
+  endpoint             = var.first_controlplane_endpoint
+  node                 = var.first_controlplane_node
 }
 
 # Apply configuration to all controlplane nodes
 resource "talos_machine_configuration_apply" "controlplane" {
   depends_on = [
-    proxmox_virtual_environment_vm.nodes
+    var.nodes_ready
   ]
 
-  for_each = {
-    for k, v in proxmox_virtual_environment_vm.nodes : k => v
-    if startswith(k, "controlplane-")
-  }
+  for_each = var.controlplane_nodes
 
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  endpoint                    = each.value.ipv4_addresses[index(each.value.network_interface_names, var.network_interface)][0]
-  node                        = each.value.ipv4_addresses[index(each.value.network_interface_names, var.network_interface)][0]
+  endpoint                    = each.value.endpoint
+  node                        = each.value.node
 
   config_patches = [
     yamlencode({
@@ -156,19 +144,16 @@ resource "talos_machine_configuration_apply" "controlplane" {
 # Apply configuration to all worker nodes
 resource "talos_machine_configuration_apply" "worker" {
   depends_on = [
-    proxmox_virtual_environment_vm.nodes,
+    var.nodes_ready,
     talos_machine_bootstrap.this
   ]
 
-  for_each = {
-    for k, v in proxmox_virtual_environment_vm.nodes : k => v
-    if startswith(k, "worker-")
-  }
+  for_each = var.worker_nodes
 
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  endpoint                    = each.value.ipv4_addresses[index(each.value.network_interface_names, var.network_interface)][0]
-  node                        = each.value.ipv4_addresses[index(each.value.network_interface_names, var.network_interface)][0]
+  endpoint                    = each.value.endpoint
+  node                        = each.value.node
 
   config_patches = [
     yamlencode({
@@ -190,6 +175,6 @@ resource "talos_cluster_kubeconfig" "this" {
   ]
 
   client_configuration = talos_machine_secrets.this.client_configuration
-  endpoint             = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
-  node                 = values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].ipv4_addresses[index(values({ for k, v in proxmox_virtual_environment_vm.nodes : k => v if startswith(k, "controlplane-") })[0].network_interface_names, var.network_interface)][0]
+  endpoint             = var.first_controlplane_endpoint
+  node                 = var.first_controlplane_node
 }

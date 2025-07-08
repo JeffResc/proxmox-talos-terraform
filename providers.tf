@@ -3,5 +3,3 @@ provider "proxmox" {
   insecure  = var.proxmox_insecure
   api_token = var.proxmox_api_token
 }
-
-provider "talos" {}
