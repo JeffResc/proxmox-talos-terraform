@@ -36,6 +36,10 @@ module "talos_bootstrap" {
   first_controlplane_endpoint = module.proxmox_infrastructure.first_controlplane_endpoint
   first_controlplane_node     = module.proxmox_infrastructure.first_controlplane_node
   nodes_ready                 = module.proxmox_infrastructure.nodes
+
+  # CCM token information
+  ccm_token_id     = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token_id : ""
+  ccm_token_secret = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token_secret : ""
 }
 
 # Proxmox infrastructure (VMs, templates, etc.)

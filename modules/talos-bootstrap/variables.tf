@@ -152,3 +152,16 @@ variable "nodes_ready" {
   type        = any
   default     = null
 }
+
+variable "ccm_token_id" {
+  description = "CCM token ID from the CCM module"
+  type        = string
+  default     = ""
+}
+
+variable "ccm_token_secret" {
+  description = "CCM token secret from the CCM module"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

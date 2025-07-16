@@ -56,4 +56,21 @@ locals {
     for node in local.all_nodes :
     node.key => cidrhost(var.network_config.cidr, node.ip_start + node.global_index)
   }
+
+  # Convert nodes list to map for resources that require for_each
+  nodes_map = {
+    for node in local.all_nodes :
+    node.key => {
+      type              = node.type
+      proxmox_node_name = node.proxmox_node_name
+      name_prefix       = node.name_prefix
+      vm_id_min         = node.vm_id_min
+      vm_id_max         = node.vm_id_max
+      ip_start          = node.ip_start
+      template_key      = node.template_key
+      index             = node.index
+      global_index      = node.global_index
+      node              = node.proxmox_node_name
+    }
+  }
 }

@@ -70,6 +70,8 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_ccm_token_id"></a> [ccm\_token\_id](#input\_ccm\_token\_id) | CCM token ID from the CCM module | `string` | `""` | no |
+| <a name="input_ccm_token_secret"></a> [ccm\_token\_secret](#input\_ccm\_token\_secret) | CCM token secret from the CCM module | `string` | `""` | no |
 | <a name="input_cluster_config"></a> [cluster\_config](#input\_cluster\_config) | Cluster configuration settings | <pre>object({<br/>    name          = string<br/>    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos<br/>    vip = optional(object({<br/>      enabled = bool<br/>      ip      = optional(string)<br/>      }), {<br/>      enabled = true<br/>      ip      = null<br/>    })<br/>    endpoint_override = optional(string)<br/>  })</pre> | n/a | yes |
 | <a name="input_controlplane_nodes"></a> [controlplane\_nodes](#input\_controlplane\_nodes) | Map of controlplane nodes with their endpoints and VM IDs | <pre>map(object({<br/>    endpoint = string<br/>    node     = string<br/>    vm_id    = string<br/>  }))</pre> | n/a | yes |
 | <a name="input_first_controlplane_endpoint"></a> [first\_controlplane\_endpoint](#input\_first\_controlplane\_endpoint) | Endpoint of the first controlplane node | `string` | n/a | yes |

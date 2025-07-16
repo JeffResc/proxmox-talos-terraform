@@ -136,7 +136,7 @@ resource "proxmox_virtual_environment_vm" "nodes" {
 
 # Configure firewall options for each VM
 resource "proxmox_virtual_environment_firewall_options" "nodes" {
-  for_each = var.network_config.enable_firewall && var.network_config.vm_firewall.enabled ? local.nodes : {}
+  for_each = var.network_config.enable_firewall && var.network_config.vm_firewall.enabled ? local.nodes_map : {}
 
   node_name = each.value.node
   vm_id     = proxmox_virtual_environment_vm.nodes[each.key].vm_id
