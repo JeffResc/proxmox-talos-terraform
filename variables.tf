@@ -36,10 +36,11 @@ variable "proxmox_config" {
 variable "network_config" {
   description = "Network configuration for Talos nodes"
   type = object({
-    cidr      = string
-    gateway   = string
-    bridge    = optional(string, "vmbr0")
-    interface = optional(string, "eth0")
+    enable_dhcp = optional(bool, false)
+    cidr        = string
+    gateway     = string
+    bridge      = optional(string, "vmbr0")
+    interface   = optional(string, "eth0")
   })
   validation {
     condition     = can(cidrhost(var.network_config.cidr, 0))

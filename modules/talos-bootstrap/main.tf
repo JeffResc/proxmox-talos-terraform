@@ -1,6 +1,6 @@
 # Talos configuration resources
 data "talos_image_factory_extensions_versions" "this" {
-  talos_version = var.talos_version
+  talos_version = var.cluster_config.talos_version
   filters = {
     names = [
       "qemu-guest-agent",
@@ -22,13 +22,13 @@ resource "talos_image_factory_schematic" "this" {
 
 # Generate Talos configurations
 resource "talos_machine_secrets" "this" {
-  talos_version = var.talos_version
+  talos_version = var.cluster_config.talos_version
 }
 
 data "talos_machine_configuration" "controlplane" {
-  cluster_name     = var.cluster_name
+  cluster_name     = var.cluster_config.name
   machine_type     = "controlplane"
-  cluster_endpoint = var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override
+  cluster_endpoint = var.cluster_config.vip.enabled ? "https://${var.cluster_config.vip.ip}:6443" : var.cluster_config.endpoint_override
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
   config_patches = [
@@ -38,12 +38,12 @@ data "talos_machine_configuration" "controlplane" {
           interfaces = [
             merge(
               {
-                interface = var.network_interface
-                dhcp      = var.enable_dhcp
+                interface = var.network_config.interface
+                dhcp      = var.network_config.enable_dhcp
               },
-              var.cluster_vip_enabled ? {
+              var.cluster_config.vip.enabled ? {
                 vip = {
-                  ip = var.cluster_vip_ip
+                  ip = var.cluster_config.vip.ip
                 }
               } : {}
             )
@@ -63,11 +63,11 @@ data "talos_machine_configuration" "controlplane" {
               stringData:
                 config.yaml: |
                   clusters:
-                    - url: "${trimsuffix(var.proxmox_endpoint, "/")}/api2/json"
-                      insecure: ${var.proxmox_insecure}
-                      token_id: "${var.ccm_token_id}"
-                      token_secret: "${var.ccm_token_secret}"
-                      region: "${var.cluster_name}"
+                    - url: "${trimsuffix(var.proxmox_config.endpoint, "/")}/api2/json"
+                      insecure: ${var.proxmox_config.insecure}
+                      token_id: "${local.ccm_token_id}"
+                      token_secret: "${local.ccm_token_secret}"
+                      region: "${var.cluster_config.name}"
             EOF
           }
         ]
@@ -89,9 +89,9 @@ data "talos_machine_configuration" "controlplane" {
 }
 
 data "talos_machine_configuration" "worker" {
-  cluster_name     = var.cluster_name
+  cluster_name     = var.cluster_config.name
   machine_type     = "worker"
-  cluster_endpoint = var.cluster_vip_enabled ? "https://${var.cluster_vip_ip}:6443" : var.cluster_endpoint_override
+  cluster_endpoint = var.cluster_config.vip.enabled ? "https://${var.cluster_config.vip.ip}:6443" : var.cluster_config.endpoint_override
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
   config_patches = [
@@ -100,8 +100,8 @@ data "talos_machine_configuration" "worker" {
         network = {
           interfaces = [
             {
-              interface = var.network_interface
-              dhcp      = var.enable_dhcp
+              interface = var.network_config.interface
+              dhcp      = var.network_config.enable_dhcp
             }
           ]
         }
@@ -139,7 +139,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
       machine = {
         kubelet = {
           extraArgs = {
-            provider-id = "proxmox://${var.cluster_name}/${each.value.vm_id}"
+            provider-id = "proxmox://${var.cluster_config.name}/${each.value.vm_id}"
           }
         }
       }
@@ -166,7 +166,7 @@ resource "talos_machine_configuration_apply" "worker" {
       machine = {
         kubelet = {
           extraArgs = {
-            provider-id = "proxmox://${var.cluster_name}/${each.value.vm_id}"
+            provider-id = "proxmox://${var.cluster_config.name}/${each.value.vm_id}"
           }
         }
       }

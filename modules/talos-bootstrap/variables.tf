@@ -1,83 +1,112 @@
-variable "talos_version" {
-  description = "Version of Talos Linux to use"
-  type        = string
-  default     = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
-}
+# =============================================================================
+# PROXMOX CONFIGURATION
+# =============================================================================
 
-variable "cluster_name" {
-  description = "Name of the Talos cluster"
-  type        = string
-  default     = "talos"
-}
+variable "proxmox_config" {
+  description = "Proxmox connection and infrastructure configuration"
+  type = object({
+    endpoint  = string
+    api_token = string
+    insecure  = optional(bool, false)
 
-variable "cluster_endpoint_override" {
-  description = "Custom cluster endpoint URL. Only used when cluster_vip_enabled is false. Must include protocol and port."
-  type        = string
-  default     = null
+    node_name                     = optional(string, "pve")
+    talos_disk_image_datastore_id = optional(string, "local")
+    template_datastore_id         = optional(string, "local-lvm")
+    vm_datastore_id               = optional(string, "local-lvm")
+
+    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
+
+    ccm_config = optional(object({
+      enabled    = bool
+      user       = optional(string, "talos-ccm@pve")
+      role       = optional(string, "TalosCCM")
+      token_name = optional(string, "ccm-token")
+      privileges = optional(list(string), ["VM.Audit"])
+      }), {
+      enabled    = true
+      user       = "talos-ccm@pve"
+      role       = "TalosCCM"
+      token_name = "ccm-token"
+      privileges = ["VM.Audit"]
+    })
+  })
+  sensitive = true
   validation {
-    condition     = var.cluster_endpoint_override == null || can(regex("^https?://", var.cluster_endpoint_override))
+    condition     = can(regex("^https?://", var.proxmox_config.endpoint))
+    error_message = "Proxmox endpoint must be a valid URL starting with http:// or https://"
+  }
+}
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+variable "network_config" {
+  description = "Network configuration for Talos nodes"
+  type = object({
+    enable_dhcp = optional(bool, false)
+    cidr        = string
+    gateway     = string
+    bridge      = optional(string, "vmbr0")
+    interface   = optional(string, "eth0")
+  })
+  validation {
+    condition     = can(cidrhost(var.network_config.cidr, 0))
+    error_message = "Network CIDR must be a valid CIDR notation."
+  }
+}
+
+# =============================================================================
+# CLUSTER CONFIGURATION
+# =============================================================================
+
+variable "cluster_config" {
+  description = "Cluster configuration settings"
+  type = object({
+    name          = string
+    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos
+    vip = optional(object({
+      enabled = bool
+      ip      = optional(string)
+      }), {
+      enabled = true
+      ip      = null
+    })
+    endpoint_override = optional(string)
+  })
+  validation {
+    condition = (
+      !var.cluster_config.vip.enabled ||
+      (var.cluster_config.vip.enabled && var.cluster_config.vip.ip != null)
+    )
+    error_message = "VIP IP must be provided when VIP is enabled."
+  }
+  validation {
+    condition = (
+      var.cluster_config.vip.enabled ||
+      (!var.cluster_config.vip.enabled && var.cluster_config.endpoint_override != null)
+    )
+    error_message = "endpoint_override must be provided when VIP is disabled."
+  }
+  validation {
+    condition = (
+      var.cluster_config.vip.ip == null ||
+      can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_config.vip.ip))
+    )
+    error_message = "VIP IP must be a valid IPv4 address."
+  }
+  validation {
+    condition = (
+      var.cluster_config.endpoint_override == null ||
+      can(regex("^https?://", var.cluster_config.endpoint_override))
+    )
     error_message = "Cluster endpoint override must be a valid URL starting with http:// or https://"
   }
-  validation {
-    condition     = var.cluster_vip_enabled || var.cluster_endpoint_override != null
-    error_message = "cluster_endpoint_override must be provided when cluster_vip_enabled is false"
-  }
 }
 
-variable "cluster_vip_enabled" {
-  description = "Enable VIP (Virtual IP) for cluster endpoint. When true, cluster_vip_ip is used as the cluster endpoint."
-  type        = bool
-  default     = true
-}
-
-variable "cluster_vip_ip" {
-  description = "IP address for the cluster VIP (Virtual IP). Required when cluster_vip_enabled is true."
-  type        = string
-  default     = null
-  validation {
-    condition     = var.cluster_vip_ip == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_vip_ip))
-    error_message = "Cluster VIP IP must be a valid IPv4 address."
-  }
-  validation {
-    condition     = !var.cluster_vip_enabled || var.cluster_vip_ip != null
-    error_message = "cluster_vip_ip must be provided when cluster_vip_enabled is true."
-  }
-}
-
-variable "network_interface" {
-  description = "Network interface name for node network configuration"
-  type        = string
-  default     = "eth0"
-}
-
-variable "enable_dhcp" {
-  description = "Enable DHCP for node network interfaces. When true, static IP variables are ignored"
-  type        = bool
-  default     = false
-}
-
-variable "proxmox_endpoint" {
-  description = "Proxmox Virtual Environment API endpoint URL"
-  type        = string
-  default     = "https://your-proxmox:8006/"
-}
-
-variable "proxmox_insecure" {
-  description = "Skip TLS certificate verification for Proxmox API"
-  type        = bool
-  default     = false
-}
-
-variable "ccm_token_id" {
-  description = "Proxmox CCM token ID"
-  type        = string
-}
-
-variable "ccm_token_secret" {
-  description = "Proxmox CCM token secret"
-  type        = string
-  sensitive   = true
-}
+# =============================================================================
+# NODE INPUTS FROM INFRASTRUCTURE MODULE
+# =============================================================================
 
 variable "controlplane_nodes" {
   description = "Map of controlplane nodes with their endpoints and VM IDs"

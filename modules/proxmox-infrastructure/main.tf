@@ -1,10 +1,10 @@
 # Download Talos image
 resource "proxmox_virtual_environment_download_file" "talos_image" {
   content_type = "import"
-  datastore_id = var.talos_disk_image_datastore_id
-  node_name    = var.image_download_node
-  file_name    = var.talos_image_filename
-  url          = "https://factory.talos.dev/image/${var.schematic_id}/${var.talos_version}/nocloud-amd64.qcow2"
+  datastore_id = var.proxmox_config.talos_disk_image_datastore_id
+  node_name    = var.proxmox_config.node_name
+  file_name    = var.talos_image_config.filename
+  url          = "https://factory.talos.dev/image/${var.talos_image_config.schematic_id}/${var.cluster_config.talos_version}/nocloud-amd64.qcow2"
   overwrite    = true
 }
 
@@ -12,31 +12,31 @@ resource "proxmox_virtual_environment_download_file" "talos_image" {
 resource "proxmox_virtual_environment_vm" "template" {
   for_each = {
     controlplane = {
-      name      = "${var.cluster_name}-ctrl-${var.talos_version}"
-      vm_id     = var.controlplane_template_id
+      name      = "${var.cluster_config.name}-ctrl-${var.cluster_config.talos_version}"
+      vm_id     = var.template_config.controlplane_id
       tag       = "controlplane"
-      memory    = var.controlplane_memory
-      cpu_cores = var.controlplane_cpu_cores
-      disk_size = var.controlplane_disk_size
+      memory    = var.resource_config.controlplane.memory
+      cpu_cores = var.resource_config.controlplane.cpu_cores
+      disk_size = var.resource_config.controlplane.disk_size
     }
     worker = {
-      name      = "${var.cluster_name}-node-${var.talos_version}"
-      vm_id     = var.worker_template_id
+      name      = "${var.cluster_config.name}-node-${var.cluster_config.talos_version}"
+      vm_id     = var.template_config.worker_id
       tag       = "worker"
-      memory    = var.worker_memory
-      cpu_cores = var.worker_cpu_cores
-      disk_size = var.worker_disk_size
+      memory    = var.resource_config.worker.memory
+      cpu_cores = var.resource_config.worker.cpu_cores
+      disk_size = var.resource_config.worker.disk_size
     }
   }
 
   name      = each.value.name
-  node_name = var.template_node
+  node_name = var.proxmox_config.node_name
   vm_id     = each.value.vm_id
   template  = true
-  tags      = concat(var.common_tags, var.extra_tags, [each.value.tag])
+  tags      = concat(var.tagging_config.common, var.tagging_config.extra, [each.value.tag])
 
   disk {
-    datastore_id = var.template_datastore_id
+    datastore_id = var.proxmox_config.template_datastore_id
     file_id      = proxmox_virtual_environment_download_file.talos_image.id
     interface    = "virtio0"
     size         = each.value.disk_size
@@ -49,11 +49,11 @@ resource "proxmox_virtual_environment_vm" "template" {
 
   cpu {
     cores = each.value.cpu_cores
-    type  = var.cpu_type
+    type  = var.resource_config.cpu_type
   }
 
   network_device {
-    bridge = var.network_bridge
+    bridge = var.network_config.bridge
   }
 
   operating_system {
@@ -71,59 +71,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   }
 }
 
-# Node configuration
-locals {
-  # Flatten node configurations for iteration across multiple Proxmox nodes
-  nodes = flatten([
-    for node_name, config in var.node_distribution : [
-      # Control plane nodes for this Proxmox node
-      for i in range(config.controlplane_count) : {
-        key               = "controlplane-${node_name}-${i}"
-        type              = "controlplane"
-        proxmox_node_name = node_name
-        name_prefix       = "${var.cluster_name}-ctrl"
-        vm_id_min         = var.controlplane_vm_id_min
-        vm_id_max         = var.controlplane_vm_id_max
-        ip_start          = var.controlplane_ip_start
-        template_key      = "controlplane"
-        index             = i
-        # Calculate global index for IP assignment
-        global_index = sum(concat([0], [
-          for other_node_name, other_config in var.node_distribution :
-          other_config.controlplane_count if index(keys(var.node_distribution), other_node_name) < index(keys(var.node_distribution), node_name)
-        ])) + i
-      }
-    ] if config.controlplane_count > 0
-  ])
-
-  # Flatten worker nodes separately
-  worker_nodes = flatten([
-    for node_name, config in var.node_distribution : [
-      for i in range(config.worker_count) : {
-        key               = "worker-${node_name}-${i}"
-        type              = "worker"
-        proxmox_node_name = node_name
-        name_prefix       = "${var.cluster_name}-node"
-        vm_id_min         = var.worker_vm_id_min
-        vm_id_max         = var.worker_vm_id_max
-        ip_start          = var.worker_ip_start
-        template_key      = "worker"
-        index             = i
-        # Calculate global index for IP assignment
-        global_index = sum(concat([0], [
-          for other_node_name, other_config in var.node_distribution :
-          other_config.worker_count if index(keys(var.node_distribution), other_node_name) < index(keys(var.node_distribution), node_name)
-        ])) + i
-      }
-    ] if config.worker_count > 0
-  ])
-
-  # Combine all nodes
-  all_nodes = concat(local.nodes, local.worker_nodes)
-
-  # Network configuration
-  network_mask = var.enable_dhcp || var.network_cidr == null || var.network_cidr == "" ? null : split("/", var.network_cidr)[1]
-}
+# Node configuration handled in locals.tf
 
 # Random VM IDs for all nodes
 resource "random_integer" "node_vm_id" {
@@ -132,7 +80,7 @@ resource "random_integer" "node_vm_id" {
   max      = each.value.vm_id_max
 
   keepers = {
-    cluster_name = var.cluster_name
+    cluster_name = var.cluster_config.name
   }
 }
 
@@ -142,7 +90,7 @@ resource "proxmox_virtual_environment_vm" "nodes" {
   name      = "${each.value.name_prefix}-${random_integer.node_vm_id[each.key].result}"
   node_name = each.value.proxmox_node_name
   vm_id     = random_integer.node_vm_id[each.key].result
-  tags      = concat(var.common_tags, var.extra_tags, [each.value.type])
+  tags      = concat(var.tagging_config.common, var.tagging_config.extra, [each.value.type])
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template[each.value.template_key].vm_id
@@ -150,20 +98,20 @@ resource "proxmox_virtual_environment_vm" "nodes" {
   }
 
   initialization {
-    datastore_id = var.vm_datastore_id
+    datastore_id = var.proxmox_config.vm_datastore_id
 
     dynamic "ip_config" {
-      for_each = var.enable_dhcp ? [] : [1]
+      for_each = var.network_config.enable_dhcp ? [] : [1]
       content {
         ipv4 {
-          address = "${cidrhost(var.network_cidr, each.value.ip_start + each.value.global_index)}/${local.network_mask}"
-          gateway = var.network_gateway
+          address = "${local.node_ips[each.key]}/${element(split("/", var.network_config.cidr), 1)}"
+          gateway = var.network_config.gateway
         }
       }
     }
 
     dns {
-      servers = var.dns_servers
+      servers = var.proxmox_config.dns_servers
     }
   }
 

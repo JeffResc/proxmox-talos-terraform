@@ -14,22 +14,12 @@ module "proxmox_ccm" {
 module "talos_bootstrap" {
   source = "./modules/talos-bootstrap"
 
-  # Pass through shared variables
-  talos_version             = var.cluster_config.talos_version
-  cluster_name              = var.cluster_config.name
-  cluster_vip_enabled       = var.cluster_config.vip.enabled
-  cluster_vip_ip            = var.cluster_config.vip.ip
-  cluster_endpoint_override = var.cluster_config.endpoint_override
-  proxmox_endpoint          = var.proxmox_config.endpoint
-  proxmox_insecure          = var.proxmox_config.insecure
+  # Pass grouped configuration objects
+  cluster_config = var.cluster_config
+  network_config = var.network_config
+  proxmox_config = var.proxmox_config
 
-  # Override defaults only if needed
-  # network_interface = "ens18"
-  # enable_dhcp = true
-
-  # Values from other modules
-  ccm_token_id                = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token_id : ""
-  ccm_token_secret            = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token_secret : ""
+  # Node information from infrastructure module
   controlplane_nodes          = module.proxmox_infrastructure.controlplane_nodes
   worker_nodes                = module.proxmox_infrastructure.worker_nodes
   first_controlplane_endpoint = module.proxmox_infrastructure.first_controlplane_endpoint
@@ -41,54 +31,21 @@ module "talos_bootstrap" {
 module "proxmox_infrastructure" {
   source = "./modules/proxmox-infrastructure"
 
-  # Pass through shared variables
-  talos_version   = var.cluster_config.talos_version
-  cluster_name    = var.cluster_config.name
-  network_cidr    = var.network_config.cidr
-  network_gateway = var.network_config.gateway
-
-  # Pass through infrastructure variables
-  talos_disk_image_datastore_id = var.proxmox_config.talos_disk_image_datastore_id
-  template_datastore_id         = var.proxmox_config.template_datastore_id
-  vm_datastore_id               = var.proxmox_config.vm_datastore_id
-  network_bridge                = var.network_config.bridge
-  controlplane_ip_start         = var.node_config.controlplane_ip_start
-  worker_ip_start               = var.node_config.worker_ip_start
-  dns_servers                   = var.proxmox_config.dns_servers
-
-  # Node distribution configuration
-  # Since we're using simple counts, we need to create the node_distribution
+  # Pass grouped configuration objects directly from root
+  cluster_config = var.cluster_config
+  network_config = var.network_config
+  proxmox_config = var.proxmox_config
+  node_config    = var.node_config
+  # Pass the other configuration objects
   node_distribution = var.node_distribution
+  template_config   = var.template_config
+  resource_config   = var.resource_config
+  vm_id_ranges      = var.vm_id_ranges
+  tagging_config    = var.tagging_config
 
-  # Template configuration
-  template_node            = var.template_config.node
-  image_download_node      = var.template_config.node
-  controlplane_template_id = var.template_config.controlplane_id
-  worker_template_id       = var.template_config.worker_id
-
-  # Resource configuration
-  controlplane_memory    = var.resource_config.controlplane.memory
-  worker_memory          = var.resource_config.worker.memory
-  controlplane_cpu_cores = var.resource_config.controlplane.cpu_cores
-  worker_cpu_cores       = var.resource_config.worker.cpu_cores
-  controlplane_disk_size = var.resource_config.controlplane.disk_size
-  worker_disk_size       = var.resource_config.worker.disk_size
-  cpu_type               = var.resource_config.cpu_type
-
-  # VM ID ranges
-  controlplane_vm_id_min = var.vm_id_ranges.controlplane_min
-  controlplane_vm_id_max = var.vm_id_ranges.controlplane_max
-  worker_vm_id_min       = var.vm_id_ranges.worker_min
-  worker_vm_id_max       = var.vm_id_ranges.worker_max
-
-  # Tagging
-  common_tags = var.tagging_config.common
-  extra_tags  = var.tagging_config.extra
-
-  # Override defaults only if needed
-  # enable_dhcp = true
-
-  # Values from other modules
-  schematic_id         = module.talos_bootstrap.image_factory_schematic_id
-  talos_image_filename = module.talos_bootstrap.talos_image_filename
+  # Talos image configuration from bootstrap module
+  talos_image_config = {
+    schematic_id = module.talos_bootstrap.image_factory_schematic_id
+    filename     = module.talos_bootstrap.talos_image_filename
+  }
 }

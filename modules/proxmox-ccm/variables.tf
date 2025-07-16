@@ -1,3 +1,7 @@
+# =============================================================================
+# PROXMOX CLOUD CONTROLLER MANAGER CONFIGURATION
+# =============================================================================
+
 variable "ccm_config" {
   description = "Configuration for Proxmox Cloud Controller Manager"
   type = object({

@@ -1,54 +1,150 @@
-variable "cluster_name" {
-  description = "Name of the Talos cluster"
-  type        = string
-  default     = "talos"
+# =============================================================================
+# CLUSTER CONFIGURATION
+# =============================================================================
+
+variable "cluster_config" {
+  description = "Cluster configuration settings"
+  type = object({
+    name          = string
+    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos
+    vip = optional(object({
+      enabled = bool
+      ip      = optional(string)
+      }), {
+      enabled = true
+      ip      = null
+    })
+    endpoint_override = optional(string)
+  })
+  validation {
+    condition = (
+      !var.cluster_config.vip.enabled ||
+      (var.cluster_config.vip.enabled && var.cluster_config.vip.ip != null)
+    )
+    error_message = "VIP IP must be provided when VIP is enabled."
+  }
+  validation {
+    condition = (
+      var.cluster_config.vip.enabled ||
+      (!var.cluster_config.vip.enabled && var.cluster_config.endpoint_override != null)
+    )
+    error_message = "endpoint_override must be provided when VIP is disabled."
+  }
+  validation {
+    condition = (
+      var.cluster_config.vip.ip == null ||
+      can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.cluster_config.vip.ip))
+    )
+    error_message = "VIP IP must be a valid IPv4 address."
+  }
+  validation {
+    condition = (
+      var.cluster_config.endpoint_override == null ||
+      can(regex("^https?://", var.cluster_config.endpoint_override))
+    )
+    error_message = "Cluster endpoint override must be a valid URL starting with http:// or https://"
+  }
 }
 
-variable "talos_version" {
-  description = "Version of Talos Linux to use"
-  type        = string
-  default     = "v1.10.5" # renovate: datasource=github-releases depName=siderolabs/talos
+# =============================================================================
+# TALOS IMAGE CONFIGURATION
+# =============================================================================
+
+variable "talos_image_config" {
+  description = "Talos image configuration"
+  type = object({
+    schematic_id = string
+    filename     = string
+  })
 }
 
-variable "schematic_id" {
-  description = "Talos image factory schematic ID"
-  type        = string
+# =============================================================================
+# PROXMOX INFRASTRUCTURE CONFIGURATION
+# =============================================================================
+
+variable "proxmox_config" {
+  description = "Proxmox connection and infrastructure configuration"
+  type = object({
+    endpoint  = string
+    api_token = string
+    insecure  = optional(bool, false)
+
+    node_name                     = optional(string, "pve")
+    talos_disk_image_datastore_id = optional(string, "local")
+    template_datastore_id         = optional(string, "local-lvm")
+    vm_datastore_id               = optional(string, "local-lvm")
+
+    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
+
+    ccm_config = optional(object({
+      enabled    = bool
+      user       = optional(string, "talos-ccm@pve")
+      role       = optional(string, "TalosCCM")
+      token_name = optional(string, "ccm-token")
+      privileges = optional(list(string), ["VM.Audit"])
+      }), {
+      enabled    = true
+      user       = "talos-ccm@pve"
+      role       = "TalosCCM"
+      token_name = "ccm-token"
+      privileges = ["VM.Audit"]
+    })
+  })
+  sensitive = true
+  validation {
+    condition     = can(regex("^https?://", var.proxmox_config.endpoint))
+    error_message = "Proxmox endpoint must be a valid URL starting with http:// or https://"
+  }
 }
 
-variable "talos_image_filename" {
-  description = "Talos image filename"
-  type        = string
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+variable "network_config" {
+  description = "Network configuration for Talos nodes"
+  type = object({
+    enable_dhcp = optional(bool, false)
+    cidr        = string
+    gateway     = string
+    bridge      = optional(string, "vmbr0")
+    interface   = optional(string, "eth0")
+  })
+  validation {
+    condition     = can(cidrhost(var.network_config.cidr, 0))
+    error_message = "Network CIDR must be a valid CIDR notation."
+  }
 }
 
-variable "talos_disk_image_datastore_id" {
-  description = "Datastore for downloading Talos disk images"
-  type        = string
-  default     = "local"
+# =============================================================================
+# NODE CONFIGURATION
+# =============================================================================
+
+variable "node_config" {
+  description = "Node configuration for the cluster"
+  type = object({
+    controlplane_count    = number
+    worker_count          = number
+    controlplane_ip_start = optional(number, 10)
+    worker_ip_start       = optional(number, 20)
+  })
+  default = {
+    controlplane_count = 3
+    worker_count       = 3
+  }
+  validation {
+    condition     = var.node_config.controlplane_count % 2 == 1 && var.node_config.controlplane_count >= 1
+    error_message = "Control plane count must be an odd number (1, 3, 5, etc.) for etcd quorum."
+  }
+  validation {
+    condition     = var.node_config.worker_count >= 0
+    error_message = "Worker count must be 0 or greater."
+  }
 }
 
-variable "template_datastore_id" {
-  description = "Datastore for VM template disks"
-  type        = string
-  default     = "local-lvm"
-}
-
-variable "vm_datastore_id" {
-  description = "Datastore for VM initialization"
-  type        = string
-  default     = "local-lvm"
-}
-
-variable "image_download_node" {
-  description = "Proxmox node where Talos disk images are downloaded"
-  type        = string
-  default     = "pve"
-}
-
-variable "template_node" {
-  description = "Proxmox node where VM templates are created"
-  type        = string
-  default     = "pve"
-}
+# =============================================================================
+# NODE DISTRIBUTION CONFIGURATION
+# =============================================================================
 
 variable "node_distribution" {
   description = "Distribution of VMs across Proxmox nodes"
@@ -79,208 +175,116 @@ variable "node_distribution" {
   }
 }
 
-variable "controlplane_template_id" {
-  description = "VM ID for the control plane template"
-  type        = number
-  default     = 998
+# =============================================================================
+# VM TEMPLATE CONFIGURATION
+# =============================================================================
+
+variable "template_config" {
+  description = "VM template configuration"
+  type = object({
+    controlplane_id = optional(number, 998)
+    worker_id       = optional(number, 999)
+  })
+  default = {}
   validation {
-    condition     = var.controlplane_template_id > 0 && var.controlplane_template_id < 10000
+    condition     = var.template_config.controlplane_id > 0 && var.template_config.controlplane_id < 10000
     error_message = "Control plane template ID must be between 1 and 9999."
   }
-}
-
-variable "worker_template_id" {
-  description = "VM ID for the worker template"
-  type        = number
-  default     = 999
   validation {
-    condition     = var.worker_template_id > 0 && var.worker_template_id < 10000
+    condition     = var.template_config.worker_id > 0 && var.template_config.worker_id < 10000
     error_message = "Worker template ID must be between 1 and 9999."
   }
 }
 
-variable "controlplane_memory" {
-  description = "Memory for control plane nodes in MB"
-  type        = number
-  default     = 4096
+# =============================================================================
+# VM RESOURCE CONFIGURATION
+# =============================================================================
+
+variable "resource_config" {
+  description = "VM resource allocation configuration"
+  type = object({
+    controlplane = optional(object({
+      memory    = optional(number, 4096)
+      cpu_cores = optional(number, 4)
+      disk_size = optional(number, 20)
+    }), {})
+    worker = optional(object({
+      memory    = optional(number, 8192)
+      cpu_cores = optional(number, 8)
+      disk_size = optional(number, 50)
+    }), {})
+    cpu_type = optional(string, "x86-64-v2-AES")
+  })
+  default = {}
   validation {
-    condition     = var.controlplane_memory >= 2048
+    condition     = var.resource_config.controlplane.memory >= 2048
     error_message = "Control plane memory must be at least 2048 MB."
   }
-}
-
-variable "worker_memory" {
-  description = "Memory for worker nodes in MB"
-  type        = number
-  default     = 8192
   validation {
-    condition     = var.worker_memory >= 2048
+    condition     = var.resource_config.worker.memory >= 2048
     error_message = "Worker memory must be at least 2048 MB."
   }
-}
-
-variable "controlplane_cpu_cores" {
-  description = "Number of CPU cores for control plane nodes"
-  type        = number
-  default     = 4
   validation {
-    condition     = var.controlplane_cpu_cores >= 2
+    condition     = var.resource_config.controlplane.cpu_cores >= 2
     error_message = "Control plane CPU cores must be at least 2."
   }
-}
-
-variable "worker_cpu_cores" {
-  description = "Number of CPU cores for worker nodes"
-  type        = number
-  default     = 8
   validation {
-    condition     = var.worker_cpu_cores >= 2
+    condition     = var.resource_config.worker.cpu_cores >= 2
     error_message = "Worker CPU cores must be at least 2."
   }
-}
-
-variable "controlplane_disk_size" {
-  description = "Disk size for control plane nodes in GB"
-  type        = number
-  default     = 20
   validation {
-    condition     = var.controlplane_disk_size >= 10
+    condition     = var.resource_config.controlplane.disk_size >= 10
     error_message = "Control plane disk size must be at least 10 GB."
   }
-}
-
-variable "worker_disk_size" {
-  description = "Disk size for worker nodes in GB"
-  type        = number
-  default     = 50
   validation {
-    condition     = var.worker_disk_size >= 20
+    condition     = var.resource_config.worker.disk_size >= 20
     error_message = "Worker disk size must be at least 20 GB."
   }
 }
 
-variable "cpu_type" {
-  description = "CPU type for VMs"
-  type        = string
-  default     = "x86-64-v2-AES"
-}
+# =============================================================================
+# VM ID RANGES
+# =============================================================================
 
-variable "network_bridge" {
-  description = "Network bridge for VM network interfaces"
-  type        = string
-  default     = "vmbr0"
-}
-
-variable "common_tags" {
-  description = "Common tags to apply to all resources"
-  type        = list(string)
-  default     = ["talos", "terraform"]
-}
-
-variable "extra_tags" {
-  type        = list(string)
-  description = "Extra tags to add to resources"
-  default     = []
-}
-
-variable "controlplane_vm_id_min" {
-  description = "Minimum VM ID for control plane nodes"
-  type        = number
-  default     = 2000
+variable "vm_id_ranges" {
+  description = "VM ID ranges for different node types"
+  type = object({
+    controlplane_min = optional(number, 2000)
+    controlplane_max = optional(number, 2999)
+    worker_min       = optional(number, 3000)
+    worker_max       = optional(number, 3999)
+  })
+  default = {}
   validation {
-    condition     = var.controlplane_vm_id_min > 0 && var.controlplane_vm_id_min < 9999
+    condition     = var.vm_id_ranges.controlplane_min > 0 && var.vm_id_ranges.controlplane_min < 9999
     error_message = "Control plane VM ID min must be between 1 and 9998."
   }
-}
-
-variable "controlplane_vm_id_max" {
-  description = "Maximum VM ID for control plane nodes"
-  type        = number
-  default     = 2999
   validation {
-    condition     = var.controlplane_vm_id_max > 0 && var.controlplane_vm_id_max < 10000
+    condition     = var.vm_id_ranges.controlplane_max > 0 && var.vm_id_ranges.controlplane_max < 10000
     error_message = "Control plane VM ID max must be between 1 and 9999."
   }
-}
-
-variable "worker_vm_id_min" {
-  description = "Minimum VM ID for worker nodes"
-  type        = number
-  default     = 3000
   validation {
-    condition     = var.worker_vm_id_min > 0 && var.worker_vm_id_min < 9999
+    condition     = var.vm_id_ranges.worker_min > 0 && var.vm_id_ranges.worker_min < 9999
     error_message = "Worker VM ID min must be between 1 and 9998."
   }
-}
-
-variable "worker_vm_id_max" {
-  description = "Maximum VM ID for worker nodes"
-  type        = number
-  default     = 3999
   validation {
-    condition     = var.worker_vm_id_max > 0 && var.worker_vm_id_max < 10000
+    condition     = var.vm_id_ranges.worker_max > 0 && var.vm_id_ranges.worker_max < 10000
     error_message = "Worker VM ID max must be between 1 and 9999."
   }
 }
 
-variable "controlplane_ip_start" {
-  description = "Starting IP address for control plane nodes (last octet) (ignored when enable_dhcp is true)"
-  type        = number
-  default     = 50
-  validation {
-    condition     = var.controlplane_ip_start > 0 && var.controlplane_ip_start < 255
-    error_message = "Control plane IP start must be between 1 and 254."
+# =============================================================================
+# TAGGING CONFIGURATION
+# =============================================================================
+
+variable "tagging_config" {
+  description = "Tagging configuration for resources"
+  type = object({
+    common = optional(list(string), ["talos", "terraform"])
+    extra  = optional(list(string), [])
+  })
+  default = {
+    common = ["talos", "terraform"]
+    extra  = []
   }
-}
-
-variable "worker_ip_start" {
-  description = "Starting IP address for worker nodes (last octet) (ignored when enable_dhcp is true)"
-  type        = number
-  default     = 70
-  validation {
-    condition     = var.worker_ip_start > 0 && var.worker_ip_start < 255
-    error_message = "Worker IP start must be between 1 and 254."
-  }
-}
-
-variable "network_cidr" {
-  description = "Network CIDR for node IP addresses (only required when enable_dhcp is false)"
-  type        = string
-  default     = null
-  validation {
-    condition     = var.network_cidr == null || var.network_cidr == "" || can(cidrhost(var.network_cidr, 0))
-    error_message = "Network CIDR must be a valid CIDR notation."
-  }
-  validation {
-    condition     = var.enable_dhcp || (var.network_cidr != null && var.network_cidr != "")
-    error_message = "network_cidr is required when enable_dhcp is false."
-  }
-}
-
-variable "network_gateway" {
-  description = "Network gateway IP address (only required when enable_dhcp is false)"
-  type        = string
-  default     = null
-  validation {
-    condition     = var.enable_dhcp || (var.network_gateway != null && var.network_gateway != "")
-    error_message = "network_gateway is required when enable_dhcp is false."
-  }
-}
-
-variable "enable_dhcp" {
-  description = "Enable DHCP for node network interfaces. When true, static IP variables (network_cidr, network_gateway, controlplane_ip_start, worker_ip_start) are ignored"
-  type        = bool
-  default     = false
-}
-
-variable "dns_servers" {
-  description = "List of DNS servers for Talos nodes (applied regardless of enable_dhcp setting)"
-  type        = list(string)
-  default     = ["1.1.1.1", "1.0.0.1"]
-}
-
-variable "network_interface" {
-  description = "Network interface name for node network configuration"
-  type        = string
-  default     = "eth0"
 }

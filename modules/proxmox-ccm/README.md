@@ -51,8 +51,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_proxmox_ccm_role"></a> [proxmox\_ccm\_role](#input\_proxmox\_ccm\_role) | Proxmox role for Cloud Controller Manager | `string` | `"TalosCCM"` | no |
-| <a name="input_proxmox_ccm_user"></a> [proxmox\_ccm\_user](#input\_proxmox\_ccm\_user) | Proxmox user for Cloud Controller Manager | `string` | `"talos-ccm@pve"` | no |
+| <a name="input_ccm_config"></a> [ccm\_config](#input\_ccm\_config) | Configuration for Proxmox Cloud Controller Manager | <pre>object({<br/>    enabled    = bool<br/>    user       = optional(string, "talos-ccm@pve")<br/>    role       = optional(string, "TalosCCM")<br/>    token_name = optional(string, "ccm-token")<br/>    privileges = optional(list(string), ["VM.Audit"])<br/>  })</pre> | <pre>{<br/>  "enabled": true,<br/>  "privileges": [<br/>    "VM.Audit"<br/>  ],<br/>  "role": "TalosCCM",<br/>  "token_name": "ccm-token",<br/>  "user": "talos-ccm@pve"<br/>}</pre> | no |
 
 ## Outputs
 

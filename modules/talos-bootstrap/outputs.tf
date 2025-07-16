@@ -35,5 +35,5 @@ output "image_factory_schematic_id" {
 
 output "talos_image_filename" {
   description = "Talos image filename"
-  value       = "${var.cluster_name}-${var.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
+  value       = "${var.cluster_config.name}-${var.cluster_config.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
 }
