@@ -1,5 +1,6 @@
 proxmox_config = {
-  endpoint  = "https://192.168.100.1:8006/"
+  host      = "192.168.100.1"
+  port      = 8006  # Default is 8006
   api_token = "user@node!token=my-token"
   insecure  = true
 

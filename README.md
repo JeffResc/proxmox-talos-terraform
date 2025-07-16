@@ -172,7 +172,8 @@ Edit `terraform.tfvars` with your settings. The configuration is organized into 
 ```hcl
 # Proxmox connection and infrastructure
 proxmox_config = {
-  endpoint  = "https://192.168.100.1:8006/"
+  host      = "192.168.100.1"
+  port      = 8006  # Default is 8006
   api_token = "user@pve!token=your-token-here"
   insecure  = true
 
@@ -184,9 +185,11 @@ proxmox_config = {
   dns_servers                   = ["1.1.1.1", "8.8.8.8"]
 
   # SSH configuration for automatic routing setup (optional)
-  # ssh_user        = "root"
-  # ssh_password    = "your-password"
-  # ssh_private_key = "~/.ssh/id_rsa"  # Recommended
+  # Required only if enable_nat_gateway = true
+  # ssh_config = {
+  #   ssh_user        = "root"  # Default is "root"
+  #   ssh_private_key = "~/.ssh/id_rsa"  # Path to SSH private key (required)
+  # }
 
   # Cloud Controller Manager configuration
   ccm_config = {
@@ -276,9 +279,10 @@ The configuration uses grouped variables for better organization:
 
 #### `proxmox_config`
 
-- Connection settings (endpoint, API token)
+- Connection settings (host, port, API token)
 - Storage locations for images and VMs
 - DNS servers
+- SSH configuration for automatic routing
 - Cloud Controller Manager settings
 
 #### `network_config`
@@ -308,43 +312,211 @@ The configuration uses grouped variables for better organization:
 
 ## Advanced Features
 
-### VPC-like Isolated Networking
+### VPC-like Isolated Networking with IPsets
 
-Create an isolated network environment similar to AWS VPC for your Talos cluster:
+Create an isolated network environment similar to AWS VPC for your Talos cluster with advanced firewall management using IPsets:
+
+#### Network Design Overview
+
+This configuration creates an isolated VPC-like network for the Talos Kubernetes cluster using configurable subnets (e.g., `10.0.0.0/16`), providing extensive IP address space for future expansion.
+
+##### Address Space Allocation
+
+```bash
+10.0.0.0/16 (65,534 hosts) - Example using /16 subnet
+├── 10.0.0.1         - Gateway/Bridge Interface
+├── 10.0.1.0/24      - Control Plane Subnet
+│   ├── 10.0.1.10    - Virtual IP (VIP) for HA
+│   ├── 10.0.1.100   - Control Plane Node 1
+│   ├── 10.0.1.101   - Control Plane Node 2
+│   └── 10.0.1.102   - Control Plane Node 3
+├── 10.0.1.200-255   - Worker Nodes
+│   ├── 10.0.1.200   - Worker Node 1
+│   ├── 10.0.1.201   - Worker Node 2
+│   └── 10.0.1.202   - Worker Node 3
+└── 10.0.2.0-255.0   - Future Expansion (65,280 IPs)
+```
+
+##### Network Components
+
+1. **Linux Bridge** (e.g., `vmbr100`)
+
+   - Isolated from the main network
+   - No physical interfaces attached by default (fully isolated)
+   - VLAN-aware for future segmentation
+   - Configurable bridge ports for different isolation levels
+
+1. **Resource Pool**
+
+   - Groups all cluster VMs together
+   - Simplifies management and resource allocation
+   - Enables bulk operations and monitoring
+
+1. **Firewall Rules**
+
+   - Kubernetes API (`6443`)
+   - Talos API (`50000`)
+   - Inter-node communication (all ports)
+   - NodePort services (default: `30000-32767`)
+   - HTTPS traffic (port `443` with additional configuration)
+
+##### Security Configuration
+
+- **IPset-based Access Control**:
+
+  - `admin_networks`: Administrative access (default: `10.0.0.0/8`, `192.168.0.0/16`)
+  - `cluster-internal`: Automatic internal cluster communication
+  - Custom IPsets for different access levels (VPN, monitoring, partners)
+
+- **Default Deny Policy**: All traffic not explicitly allowed is blocked
+
+- **VM-level Firewall**: Additional per-VM security policies
+
+##### Future Expansion Options
+
+With proper subnet sizing, you have room for:
+
+- Multiple Kubernetes clusters in the same network
+- Different environments (dev, staging, prod)
+- Service subnets for load balancers
+- Pod network overlays
+- Dedicated subnets for specific workloads
+
+##### VLAN Support
+
+The configuration is VLAN-aware, allowing future segmentation:
+
+- VLAN 100: Production cluster
+- VLAN 200: Development cluster
+- VLAN 300: Management traffic
+- Custom VLANs for multi-tenancy
+
+#### Network Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Proxmox Host"
+        subgraph "Network Infrastructure"
+            BR[Linux Bridge<br/>vmbr100<br/>10.100.0.1/24]
+            VLAN[VLAN 100<br/>Optional]
+            NAT[NAT Gateway<br/>iptables MASQUERADE]
+        end
+
+        subgraph "Firewall Layer"
+            subgraph "IPsets"
+                IPS1[admin_networks<br/>10.0.0.0/8<br/>192.168.0.0/16]
+                IPS2[vpn_users<br/>172.16.0.0/12]
+                IPS3[monitoring<br/>10.50.0.0/24]
+                IPSI[cluster-internal<br/>10.100.0.0/24]
+            end
+
+            subgraph "Security Group Rules"
+                R1[Kubernetes API<br/>Port 6443]
+                R2[Talos API<br/>Port 50000]
+                R3[NodePort Services<br/>30000-32767]
+                R4[Inter-node Traffic<br/>All Ports]
+            end
+        end
+
+        subgraph "Cluster VMs"
+            subgraph "Control Plane"
+                CP1[CP-1<br/>10.100.0.100]
+                CP2[CP-2<br/>10.100.0.101]
+                CP3[CP-3<br/>10.100.0.102]
+            end
+            subgraph "Workers"
+                W1[Worker-1<br/>10.100.0.200]
+                W2[Worker-2<br/>10.100.0.201]
+                W3[Worker-3<br/>10.100.0.202]
+            end
+        end
+    end
+
+    subgraph "External Networks"
+        ADMIN[Admin Network<br/>10.0.0.0/8]
+        VPN[VPN Users<br/>172.16.0.0/12]
+        MON[Monitoring<br/>10.50.0.0/24]
+        INET[Internet]
+    end
+
+    %% Network connections
+    BR --> CP1
+    BR --> CP2
+    BR --> CP3
+    BR --> W1
+    BR --> W2
+    BR --> W3
+    VLAN -.-> BR
+
+    %% IPset memberships
+    ADMIN --> IPS1
+    VPN --> IPS2
+    MON --> IPS3
+    CP1 --> IPSI
+    CP2 --> IPSI
+    CP3 --> IPSI
+    W1 --> IPSI
+    W2 --> IPSI
+    W3 --> IPSI
+
+    %% Firewall rules using IPsets
+    IPS1 --> R1
+    IPS1 --> R2
+    IPS1 --> R3
+    IPS2 --> R1
+    IPS2 --> R3
+    IPS3 --> R1
+    IPSI --> R4
+
+    %% NAT for outbound
+    BR --> NAT
+    NAT --> INET
+
+    %% Styling
+    classDef network fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef firewall fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef ipset fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef vm fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef external fill:#ffebee,stroke:#c62828,stroke-width:2px
+
+    class BR,VLAN,NAT network
+    class R1,R2,R3,R4 firewall
+    class IPS1,IPS2,IPS3,IPSI ipset
+    class CP1,CP2,CP3,W1,W2,W3 vm
+    class ADMIN,VPN,MON,INET external
+```
+
+### Network Configuration Example
 
 ```hcl
 network_config = {
-  # Basic network settings
-  cidr      = "10.100.0.0/24"
-  gateway   = "10.100.0.1"
+  # Basic network settings - using large subnet for future expansion
+  cidr      = "10.0.0.0/16"    # 65,534 hosts available
+  gateway   = "10.0.0.1"       # Bridge interface IP
   interface = "eth0"
 
   # Create a new isolated Linux bridge
   create_bridge = true
   bridge_name   = "vmbr100"        # Custom bridge name
-  bridge_cidr   = "10.100.0.1/24"  # IP address for the bridge interface
+  bridge_cidr   = "10.0.0.1/16"    # IP address for the bridge interface
   bridge_ports  = []               # Empty = fully isolated (recommended)
   # bridge_ports = ["eth1"]        # Bridge to physical interface (optional)
+  # bridge_ports = ["vmbr0"]       # Bridge to existing bridge (for routing)
 
   # Enable NAT gateway for internet access
   enable_nat_gateway = true        # Requires SSH configuration
 
-  # VLAN configuration (optional)
-  vlan_id               = 100
+  # VLAN configuration (optional) - for network segmentation
+  vlan_id               = 100      # Production VLAN
   vlan_parent_interface = "eth0"
+  vlan_aware            = true     # Enable VLAN tagging support
 
   # Resource pool for organization
-  resource_pool_id = "talos-prod"  # Defaults to cluster name if not specified
+  resource_pool_id = "talos-prod"  # Groups all cluster resources
 
   # Firewall rules
   enable_firewall = true
-  allowed_cidrs   = [
-    "10.0.0.0/8",      # Internal networks
-    "192.168.0.0/16",  # Local networks
-    "203.0.113.0/24"   # Specific external access
-  ]
   nodeport_range = "30000-32767"
-}
 ```
 
 This creates:
@@ -360,6 +532,103 @@ The firewall automatically configures:
 - Talos API access (port 50000)
 - Inter-node communication
 - NodePort services (customizable range)
+
+**IPsets for Better Network Management**:
+
+The module uses Proxmox IPsets to organize network access control:
+
+- **Admin Networks**: Define trusted networks that can access the cluster
+- **Internal Network**: Automatically created for node-to-node communication
+- **Custom IPsets**: Add your own IPsets for different access levels
+
+Example IPset configuration:
+
+```hcl
+network_config = {
+  # ... other settings ...
+
+  # Define IPsets for organized access control
+  ipsets = {
+    admin_networks = {
+      comment = "Administrative access networks"
+      cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]
+    }
+    vpn_users = {
+      comment = "VPN user access"
+      cidrs   = ["172.16.0.0/12"]
+    }
+    monitoring = {
+      comment = "Monitoring systems"
+      cidrs   = ["10.50.0.0/24", "10.50.1.0/24"]
+    }
+  }
+}
+```
+
+Benefits of using IPsets:
+
+- **Reusability**: Define networks once, use in multiple rules
+- **Maintainability**: Update network ranges in one place
+- **Performance**: IPsets are more efficient than individual CIDR rules
+- **Organization**: Group related networks with descriptive names
+
+#### How IPsets Work with Firewall Rules
+
+The module automatically creates firewall rules that reference your IPsets:
+
+1. **External Access Rules**: For each IPset you define, the module creates rules allowing access to:
+
+   - Kubernetes API (port 6443)
+   - Talos API (port 50000)
+   - NodePort services (default: 30000-32767)
+
+1. **Internal Cluster Rules**: A special `cluster-internal` IPset is automatically created containing your cluster CIDR, allowing:
+
+   - All inter-node communication
+   - etcd peer communication (ports 2379-2380)
+   - Kubelet API (port 10250)
+   - Internal Talos API (port 50001)
+
+1. **Rule Generation**: If you define 3 IPsets, you'll get:
+
+   - 3 rules for Kubernetes API (one per IPset)
+   - 3 rules for Talos API (one per IPset)
+   - 3 rules for NodePort services (one per IPset)
+   - 4 rules for internal cluster communication
+
+This approach provides fine-grained access control while keeping the configuration simple and maintainable.
+
+#### VM-Level Firewall Options
+
+In addition to the cluster-level firewall rules, you can configure VM-specific firewall options:
+
+```hcl
+network_config = {
+  enable_firewall = true
+
+  # VM-level firewall configuration
+  vm_firewall = {
+    enabled    = true      # Enable firewall on each VM
+    dhcp       = false     # Block DHCP traffic
+    ipfilter   = true      # Enable IP filter (anti-spoofing)
+    log_level_in  = "nolog"   # Input log level: nolog, emerg, alert, crit, err, warning, notice, info, debug
+    log_level_out = "nolog"   # Output log level: nolog, emerg, alert, crit, err, warning, notice, info, debug
+    macfilter  = false     # Disable MAC address filtering
+    ndp        = true      # Enable IPv6 Neighbor Discovery Protocol
+    input_policy  = "DROP"    # Default policy for incoming traffic
+    output_policy = "ACCEPT"  # Default policy for outgoing traffic
+  }
+}
+```
+
+VM firewall options provide:
+
+- **Anti-spoofing protection**: `ipfilter` prevents IP address spoofing
+- **Traffic logging**: Configure log verbosity for debugging
+- **Default policies**: Set default DROP/ACCEPT for traffic not matching any rule
+- **Protocol control**: Enable/disable DHCP and NDP as needed
+
+The combination of cluster-level security groups with IPsets and VM-level firewall options creates a robust defense-in-depth security architecture.
 
 #### NAT Gateway Configuration
 
@@ -379,11 +648,11 @@ network_config = {
 proxmox_config = {
   # ... other settings ...
 
-  # SSH authentication (choose one)
-  ssh_user        = "root"
-  ssh_private_key = "~/.ssh/id_rsa"  # Recommended
-  # OR
-  ssh_password    = "your-password"
+  # SSH authentication (private key required)
+  ssh_config = {
+    ssh_user        = "root"  # Default is "root"
+    ssh_private_key = "~/.ssh/id_rsa"  # Path to SSH private key (required)
+  }
 }
 ```
 
@@ -481,22 +750,42 @@ cluster_config = {
 
 Key outputs available after deployment:
 
+### Cluster Information
+
 - `cluster_endpoint`: Kubernetes API endpoint
 - `controlplane_nodes`: Control plane node details
 - `worker_nodes`: Worker node details
+- `controlplane_ips`: List of control plane IP addresses
+- `worker_ips`: List of worker IP addresses
+
+### Configuration Files
+
 - `talos_client_configuration`: Talos configuration for talosctl
 - `talos_cluster_kubeconfig`: Kubernetes configuration
+- `talos_machine_secrets`: Talos machine secrets (sensitive)
+
+### Infrastructure Resources
+
+- `talos_image_id`: Talos image ID in Proxmox
+- `controlplane_template_id`: Control plane template VM ID
+- `worker_template_id`: Worker template VM ID
+- `proxmox_ccm_token`: Proxmox Cloud Controller Manager API token
+
+### Network Resources
+
 - `resource_pool_id`: Resource pool ID for the cluster
 - `network_bridge`: Network bridge used for the cluster
 - `vlan_id`: VLAN ID if configured
 - `security_group_name`: Firewall security group name
+- `ipset_names`: Map of IPset names created for access control
+- `internal_ipset_name`: Internal cluster IPset name
 
 ## Documentation
 
 This project uses [terraform-docs](https://github.com/terraform-docs/terraform-docs) to generate documentation automatically.
 
 <!-- BEGIN_TF_DOCS -->
-### Requirements
+## Requirements
 
 | Name | Version |
 |------|---------|
@@ -505,11 +794,11 @@ This project uses [terraform-docs](https://github.com/terraform-docs/terraform-d
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.1 |
 | <a name="requirement_talos"></a> [talos](#requirement\_talos) | 0.8.1 |
 
-### Providers
+## Providers
 
 No providers.
 
-### Modules
+## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
@@ -518,25 +807,25 @@ No providers.
 | <a name="module_proxmox_network"></a> [proxmox\_network](#module\_proxmox\_network) | ./modules/proxmox-network | n/a |
 | <a name="module_talos_bootstrap"></a> [talos\_bootstrap](#module\_talos\_bootstrap) | ./modules/talos-bootstrap | n/a |
 
-### Resources
+## Resources
 
 No resources.
 
-### Inputs
+## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_cluster_config"></a> [cluster\_config](#input\_cluster\_config) | Cluster configuration settings | <pre>object({<br/>    name          = string<br/>    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos<br/>    vip = optional(object({<br/>      enabled = bool<br/>      ip      = optional(string)<br/>      }), {<br/>      enabled = true<br/>      ip      = null<br/>    })<br/>    endpoint_override = optional(string)<br/>  })</pre> | n/a | yes |
-| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/><br/>    # VPC-like network settings<br/>    create_bridge = optional(bool, false)  # Create a new Linux bridge<br/>    bridge_name   = optional(string)       # Custom bridge name (auto-generated if not specified)<br/>    bridge_id     = optional(number, 100)  # Bridge ID if bridge_name not specified<br/>    bridge_cidr   = optional(string)       # CIDR for the bridge interface<br/>    bridge_ports  = optional(list(string)) # Physical interfaces to bridge<br/>    vlan_aware    = optional(bool, true)<br/><br/>    # VLAN configuration<br/>    vlan_id               = optional(number) # Create VLAN if specified<br/>    vlan_parent_interface = optional(string, "eth0")<br/><br/>    # Resource pool<br/>    resource_pool_id = optional(string) # Defaults to cluster name<br/><br/>    # Network settings<br/>    mtu = optional(number, 1500)<br/><br/>    # Firewall configuration<br/>    enable_firewall = optional(bool, false)<br/>    allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])<br/>    nodeport_range  = optional(string, "30000-32767")<br/><br/>    # NAT Gateway configuration<br/>    enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT<br/>  })</pre> | n/a | yes |
+| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/><br/>    # VPC-like network settings<br/>    create_bridge = optional(bool, false)  # Create a new Linux bridge<br/>    bridge_name   = optional(string)       # Custom bridge name (auto-generated if not specified)<br/>    bridge_id     = optional(number, 100)  # Bridge ID if bridge_name not specified<br/>    bridge_cidr   = optional(string)       # CIDR for the bridge interface<br/>    bridge_ports  = optional(list(string)) # Physical interfaces to bridge<br/>    vlan_aware    = optional(bool, true)<br/><br/>    # VLAN configuration<br/>    vlan_id               = optional(number) # Create VLAN if specified<br/>    vlan_parent_interface = optional(string, "eth0")<br/><br/>    # Resource pool<br/>    resource_pool_id = optional(string) # Defaults to cluster name<br/><br/>    # Network settings<br/>    mtu = optional(number, 1500)<br/><br/>    # Firewall configuration<br/>    enable_firewall = optional(bool, false)<br/>    allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])<br/>    nodeport_range  = optional(string, "30000-32767")<br/><br/>    # IPset configuration for better firewall management<br/>    ipsets = optional(map(object({<br/>      comment = optional(string)<br/>      cidrs   = list(string)<br/>      })), {<br/>      admin_networks = {<br/>        comment = "Administrative access networks"<br/>        cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]<br/>      }<br/>    })<br/><br/>    # VM-level firewall options<br/>    vm_firewall = optional(object({<br/>      enabled       = optional(bool, true)       # Enable firewall on VMs<br/>      dhcp          = optional(bool, false)      # Allow DHCP<br/>      ipfilter      = optional(bool, true)       # Enable IP filter<br/>      log_level_in  = optional(string, "nolog")  # Input log level: nolog, emerg, alert, crit, err, warning, notice, info, debug<br/>      log_level_out = optional(string, "nolog")  # Output log level: nolog, emerg, alert, crit, err, warning, notice, info, debug<br/>      macfilter     = optional(bool, false)      # Enable MAC filter<br/>      ndp           = optional(bool, true)       # Enable NDP (IPv6)<br/>      input_policy  = optional(string, "DROP")   # Default input policy<br/>      output_policy = optional(string, "ACCEPT") # Default output policy<br/>      }), {<br/>      enabled       = true<br/>      dhcp          = false<br/>      ipfilter      = true<br/>      log_level_in  = "nolog"<br/>      log_level_out = "nolog"<br/>      macfilter     = false<br/>      ndp           = true<br/>      input_policy  = "DROP"<br/>      output_policy = "ACCEPT"<br/>    })<br/><br/>    # NAT Gateway configuration<br/>    enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT<br/>  })</pre> | n/a | yes |
 | <a name="input_node_config"></a> [node\_config](#input\_node\_config) | Node configuration for the cluster | <pre>object({<br/>    controlplane_count    = number<br/>    worker_count          = number<br/>    controlplane_ip_start = optional(number, 10)<br/>    worker_ip_start       = optional(number, 20)<br/>  })</pre> | <pre>{<br/>  "controlplane_count": 3,<br/>  "worker_count": 3<br/>}</pre> | no |
 | <a name="input_node_distribution"></a> [node\_distribution](#input\_node\_distribution) | Distribution of VMs across Proxmox nodes | <pre>map(object({<br/>    controlplane_count = number<br/>    worker_count       = number<br/>  }))</pre> | <pre>{<br/>  "pve": {<br/>    "controlplane_count": 3,<br/>    "worker_count": 3<br/>  }<br/>}</pre> | no |
-| <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    endpoint  = string<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/><br/>    # SSH configuration for routing setup (optional)<br/>    ssh_host        = optional(string) # Defaults to endpoint host<br/>    ssh_user        = optional(string, "root")<br/>    ssh_password    = optional(string)<br/>    ssh_private_key = optional(string) # Path to SSH private key<br/><br/>    ccm_config = optional(object({<br/>      enabled    = bool<br/>      user       = optional(string, "talos-ccm@pve")<br/>      role       = optional(string, "TalosCCM")<br/>      token_name = optional(string, "ccm-token")<br/>      privileges = optional(list(string), ["VM.Audit"])<br/>      }), {<br/>      enabled    = true<br/>      user       = "talos-ccm@pve"<br/>      role       = "TalosCCM"<br/>      token_name = "ccm-token"<br/>      privileges = ["VM.Audit"]<br/>    })<br/>  })</pre> | n/a | yes |
+| <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    host      = string<br/>    port      = optional(number, 8006)<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/><br/>    # SSH configuration for routing setup (optional)<br/>    ssh_config = optional(object({<br/>      ssh_user        = optional(string, "root")<br/>      ssh_private_key = string # Path to SSH private key (required for NAT gateway)<br/>    }))<br/><br/>    ccm_config = optional(object({<br/>      enabled    = bool<br/>      user       = optional(string, "talos-ccm@pve")<br/>      role       = optional(string, "TalosCCM")<br/>      token_name = optional(string, "ccm-token")<br/>      privileges = optional(list(string), ["VM.Audit"])<br/>      }), {<br/>      enabled    = true<br/>      user       = "talos-ccm@pve"<br/>      role       = "TalosCCM"<br/>      token_name = "ccm-token"<br/>      privileges = ["VM.Audit"]<br/>    })<br/>  })</pre> | n/a | yes |
 | <a name="input_resource_config"></a> [resource\_config](#input\_resource\_config) | VM resource allocation configuration | <pre>object({<br/>    controlplane = optional(object({<br/>      memory    = optional(number, 4096)<br/>      cpu_cores = optional(number, 4)<br/>      disk_size = optional(number, 20)<br/>    }), {})<br/>    worker = optional(object({<br/>      memory    = optional(number, 8192)<br/>      cpu_cores = optional(number, 8)<br/>      disk_size = optional(number, 50)<br/>    }), {})<br/>    cpu_type = optional(string, "x86-64-v2-AES")<br/>  })</pre> | `{}` | no |
 | <a name="input_tagging_config"></a> [tagging\_config](#input\_tagging\_config) | Tagging configuration for resources | <pre>object({<br/>    common = optional(list(string), ["talos", "terraform"])<br/>    extra  = optional(list(string), [])<br/>  })</pre> | <pre>{<br/>  "common": [<br/>    "talos",<br/>    "terraform"<br/>  ],<br/>  "extra": []<br/>}</pre> | no |
 | <a name="input_template_config"></a> [template\_config](#input\_template\_config) | VM template configuration | <pre>object({<br/>    controlplane_id = optional(number, 998)<br/>    worker_id       = optional(number, 999)<br/>    node            = optional(string, "pve")<br/>  })</pre> | `{}` | no |
 | <a name="input_vm_id_ranges"></a> [vm\_id\_ranges](#input\_vm\_id\_ranges) | VM ID ranges for different node types | <pre>object({<br/>    controlplane_min = optional(number, 2000)<br/>    controlplane_max = optional(number, 2999)<br/>    worker_min       = optional(number, 3000)<br/>    worker_max       = optional(number, 3999)<br/>  })</pre> | `{}` | no |
 
-### Outputs
+## Outputs
 
 | Name | Description |
 |------|-------------|
@@ -544,6 +833,8 @@ No resources.
 | <a name="output_controlplane_ips"></a> [controlplane\_ips](#output\_controlplane\_ips) | List of control plane IP addresses |
 | <a name="output_controlplane_nodes"></a> [controlplane\_nodes](#output\_controlplane\_nodes) | Control plane node information |
 | <a name="output_controlplane_template_id"></a> [controlplane\_template\_id](#output\_controlplane\_template\_id) | Control plane template VM ID |
+| <a name="output_internal_ipset_name"></a> [internal\_ipset\_name](#output\_internal\_ipset\_name) | Internal cluster IPset name for node-to-node communication |
+| <a name="output_ipset_names"></a> [ipset\_names](#output\_ipset\_names) | Map of IPset names created for the cluster |
 | <a name="output_network_bridge"></a> [network\_bridge](#output\_network\_bridge) | Network bridge used for the cluster |
 | <a name="output_proxmox_ccm_token"></a> [proxmox\_ccm\_token](#output\_proxmox\_ccm\_token) | Proxmox Cloud Controller Manager API token |
 | <a name="output_resource_pool_id"></a> [resource\_pool\_id](#output\_resource\_pool\_id) | Resource pool ID for the cluster |

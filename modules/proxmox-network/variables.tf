@@ -22,15 +22,31 @@ variable "cluster_config" {
 variable "proxmox_config" {
   description = "Proxmox configuration including SSH access for routing setup"
   type = object({
-    endpoint  = string
+    host      = string
+    port      = optional(number, 8006)
     api_token = optional(string)
     insecure  = optional(bool, false)
 
     # SSH configuration for routing setup (optional)
-    ssh_host        = optional(string) # Defaults to endpoint host
-    ssh_user        = optional(string, "root")
-    ssh_password    = optional(string)
-    ssh_private_key = optional(string) # Path to SSH private key
+    ssh_config = optional(object({
+      ssh_user        = optional(string, "root")
+      ssh_private_key = string # Path to SSH private key (required for NAT gateway)
+    }))
+
+    # Other optional configs
+    node_name                     = optional(string)
+    talos_disk_image_datastore_id = optional(string)
+    template_datastore_id         = optional(string)
+    vm_datastore_id               = optional(string)
+    dns_servers                   = optional(list(string))
+
+    ccm_config = optional(object({
+      enabled    = bool
+      user       = optional(string)
+      role       = optional(string)
+      token_name = optional(string)
+      privileges = optional(list(string))
+    }))
   })
 }
 
@@ -70,6 +86,17 @@ variable "network_config" {
     enable_firewall = optional(bool, true)
     allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])
     nodeport_range  = optional(string, "30000-32767")
+
+    # IPset configuration for better firewall management
+    ipsets = optional(map(object({
+      comment = optional(string)
+      cidrs   = list(string)
+      })), {
+      admin_networks = {
+        comment = "Administrative access networks"
+        cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]
+      }
+    })
 
     # NAT Gateway configuration
     enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT

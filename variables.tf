@@ -1,7 +1,8 @@
 variable "proxmox_config" {
   description = "Proxmox connection and infrastructure configuration"
   type = object({
-    endpoint  = string
+    host      = string
+    port      = optional(number, 8006)
     api_token = string
     insecure  = optional(bool, false)
 
@@ -13,10 +14,10 @@ variable "proxmox_config" {
     dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
 
     # SSH configuration for routing setup (optional)
-    ssh_host        = optional(string) # Defaults to endpoint host
-    ssh_user        = optional(string, "root")
-    ssh_password    = optional(string)
-    ssh_private_key = optional(string) # Path to SSH private key
+    ssh_config = optional(object({
+      ssh_user        = optional(string, "root")
+      ssh_private_key = string # Path to SSH private key (required for NAT gateway)
+    }))
 
     ccm_config = optional(object({
       enabled    = bool
@@ -34,8 +35,12 @@ variable "proxmox_config" {
   })
   sensitive = true
   validation {
-    condition     = can(regex("^https?://", var.proxmox_config.endpoint))
-    error_message = "Proxmox endpoint must be a valid URL starting with http:// or https://"
+    condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$", var.proxmox_config.host)) || can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}$", var.proxmox_config.host))
+    error_message = "Proxmox host must be a valid hostname or IP address"
+  }
+  validation {
+    condition     = var.proxmox_config.port > 0 && var.proxmox_config.port <= 65535
+    error_message = "Proxmox port must be between 1 and 65535"
   }
 }
 
@@ -70,6 +75,40 @@ variable "network_config" {
     enable_firewall = optional(bool, false)
     allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])
     nodeport_range  = optional(string, "30000-32767")
+
+    # IPset configuration for better firewall management
+    ipsets = optional(map(object({
+      comment = optional(string)
+      cidrs   = list(string)
+      })), {
+      admin_networks = {
+        comment = "Administrative access networks"
+        cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]
+      }
+    })
+
+    # VM-level firewall options
+    vm_firewall = optional(object({
+      enabled       = optional(bool, true)       # Enable firewall on VMs
+      dhcp          = optional(bool, false)      # Allow DHCP
+      ipfilter      = optional(bool, true)       # Enable IP filter
+      log_level_in  = optional(string, "nolog")  # Input log level: nolog, emerg, alert, crit, err, warning, notice, info, debug
+      log_level_out = optional(string, "nolog")  # Output log level: nolog, emerg, alert, crit, err, warning, notice, info, debug
+      macfilter     = optional(bool, false)      # Enable MAC filter
+      ndp           = optional(bool, true)       # Enable NDP (IPv6)
+      input_policy  = optional(string, "DROP")   # Default input policy
+      output_policy = optional(string, "ACCEPT") # Default output policy
+      }), {
+      enabled       = true
+      dhcp          = false
+      ipfilter      = true
+      log_level_in  = "nolog"
+      log_level_out = "nolog"
+      macfilter     = false
+      ndp           = true
+      input_policy  = "DROP"
+      output_policy = "ACCEPT"
+    })
 
     # NAT Gateway configuration
     enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT

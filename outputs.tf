@@ -108,3 +108,13 @@ output "security_group_name" {
   description = "Firewall security group name if configured"
   value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].security_group_name : null
 }
+
+output "ipset_names" {
+  description = "Map of IPset names created for the cluster"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].ipset_names : {}
+}
+
+output "internal_ipset_name" {
+  description = "Internal cluster IPset name for node-to-node communication"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].internal_ipset_name : null
+}

@@ -65,7 +65,8 @@ variable "talos_image_config" {
 variable "proxmox_config" {
   description = "Proxmox connection and infrastructure configuration"
   type = object({
-    endpoint  = string
+    host      = string
+    port      = optional(number, 8006)
     api_token = string
     insecure  = optional(bool, false)
 
@@ -75,6 +76,12 @@ variable "proxmox_config" {
     vm_datastore_id               = optional(string, "local-lvm")
 
     dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
+
+    # SSH configuration for routing setup (optional)
+    ssh_config = optional(object({
+      ssh_user        = optional(string, "root")
+      ssh_private_key = string # Path to SSH private key (required for NAT gateway)
+    }))
 
     ccm_config = optional(object({
       enabled    = bool
@@ -92,8 +99,12 @@ variable "proxmox_config" {
   })
   sensitive = true
   validation {
-    condition     = can(regex("^https?://", var.proxmox_config.endpoint))
-    error_message = "Proxmox endpoint must be a valid URL starting with http:// or https://"
+    condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$", var.proxmox_config.host)) || can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}$", var.proxmox_config.host))
+    error_message = "Proxmox host must be a valid hostname or IP address"
+  }
+  validation {
+    condition     = var.proxmox_config.port > 0 && var.proxmox_config.port <= 65535
+    error_message = "Proxmox port must be between 1 and 65535"
   }
 }
 
@@ -109,6 +120,32 @@ variable "network_config" {
     gateway     = string
     bridge      = optional(string, "vmbr0")
     interface   = optional(string, "eth0")
+
+    # Required from root module for firewall configuration
+    enable_firewall = optional(bool, false)
+
+    # VM-level firewall options
+    vm_firewall = optional(object({
+      enabled       = optional(bool, true)
+      dhcp          = optional(bool, false)
+      ipfilter      = optional(bool, true)
+      log_level_in  = optional(string, "nolog")
+      log_level_out = optional(string, "nolog")
+      macfilter     = optional(bool, false)
+      ndp           = optional(bool, true)
+      input_policy  = optional(string, "DROP")
+      output_policy = optional(string, "ACCEPT")
+      }), {
+      enabled       = true
+      dhcp          = false
+      ipfilter      = true
+      log_level_in  = "nolog"
+      log_level_out = "nolog"
+      macfilter     = false
+      ndp           = true
+      input_policy  = "DROP"
+      output_policy = "ACCEPT"
+    })
   })
   validation {
     condition     = can(cidrhost(var.network_config.cidr, 0))

@@ -49,10 +49,9 @@ resource "null_resource" "configure_routing" {
 
   connection {
     type        = "ssh"
-    host        = var.proxmox_config.ssh_host != null ? var.proxmox_config.ssh_host : split(":", replace(var.proxmox_config.endpoint, "https://", ""))[0]
-    user        = var.proxmox_config.ssh_user
-    password    = var.proxmox_config.ssh_password
-    private_key = var.proxmox_config.ssh_private_key != null ? file(var.proxmox_config.ssh_private_key) : null
+    host        = var.proxmox_config.host
+    user        = var.proxmox_config.ssh_config != null ? var.proxmox_config.ssh_config.ssh_user : "root"
+    private_key = var.proxmox_config.ssh_config != null ? file(var.proxmox_config.ssh_config.ssh_private_key) : null
   }
 
   provisioner "remote-exec" {
@@ -95,6 +94,39 @@ resource "proxmox_virtual_environment_network_linux_vlan" "cluster" {
 }
 
 # =============================================================================
+# FIREWALL IPSETS (Optional)
+# =============================================================================
+
+# Create IPsets for organized network access control
+resource "proxmox_virtual_environment_firewall_ipset" "cluster" {
+  for_each = var.network_config.enable_firewall ? var.network_config.ipsets : {}
+
+  name    = "${var.cluster_config.name}-${each.key}"
+  comment = each.value.comment != null ? each.value.comment : "IPset for ${var.cluster_config.name} cluster - ${each.key}"
+
+  dynamic "cidr" {
+    for_each = each.value.cidrs
+    content {
+      name    = cidr.value
+      comment = "Network ${cidr.value}"
+    }
+  }
+}
+
+# Always create cluster internal IPset for node-to-node communication
+resource "proxmox_virtual_environment_firewall_ipset" "cluster_internal" {
+  count = var.network_config.enable_firewall ? 1 : 0
+
+  name    = "${var.cluster_config.name}-internal"
+  comment = "Internal cluster network for ${var.cluster_config.name}"
+
+  cidr {
+    name    = var.network_config.cidr
+    comment = "Cluster internal network"
+  }
+}
+
+# =============================================================================
 # FIREWALL RULES (Optional)
 # =============================================================================
 
@@ -116,26 +148,32 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "talos" {
   name    = "${var.cluster_config.name}-talos"
   comment = "Security group for ${var.cluster_config.name} Talos cluster"
 
-  # Talos API (control plane)
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    comment = "Talos API"
-    dest    = var.network_config.cidr
-    dport   = "50000"
-    proto   = "tcp"
-    source  = join(",", var.network_config.allowed_cidrs)
+  # Talos API (control plane) - using IPsets for admin access
+  dynamic "rule" {
+    for_each = var.network_config.ipsets
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      comment = "Talos API - ${rule.key}"
+      dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
+      dport   = "50000"
+      proto   = "tcp"
+      source  = "+${proxmox_virtual_environment_firewall_ipset.cluster[rule.key].name}"
+    }
   }
 
-  # Kubernetes API
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    comment = "Kubernetes API"
-    dest    = var.network_config.cidr
-    dport   = "6443"
-    proto   = "tcp"
-    source  = join(",", var.network_config.allowed_cidrs)
+  # Kubernetes API - using IPsets for admin access
+  dynamic "rule" {
+    for_each = var.network_config.ipsets
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      comment = "Kubernetes API - ${rule.key}"
+      dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
+      dport   = "6443"
+      proto   = "tcp"
+      source  = "+${proxmox_virtual_environment_firewall_ipset.cluster[rule.key].name}"
+    }
   }
 
   # etcd peers (control plane to control plane)
@@ -143,10 +181,10 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "talos" {
     type    = "in"
     action  = "ACCEPT"
     comment = "etcd peers"
-    dest    = var.network_config.cidr
+    dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
     dport   = "2379-2380"
     proto   = "tcp"
-    source  = var.network_config.cidr
+    source  = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
   }
 
   # Kubelet API (all nodes)
@@ -154,10 +192,10 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "talos" {
     type    = "in"
     action  = "ACCEPT"
     comment = "Kubelet API"
-    dest    = var.network_config.cidr
+    dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
     dport   = "10250"
     proto   = "tcp"
-    source  = var.network_config.cidr
+    source  = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
   }
 
   # Talos API (node to node)
@@ -165,10 +203,10 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "talos" {
     type    = "in"
     action  = "ACCEPT"
     comment = "Talos API internal"
-    dest    = var.network_config.cidr
+    dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
     dport   = "50001"
     proto   = "tcp"
-    source  = var.network_config.cidr
+    source  = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
   }
 
   # Allow all traffic between cluster nodes
@@ -176,21 +214,21 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "talos" {
     type    = "in"
     action  = "ACCEPT"
     comment = "Cluster internal traffic"
-    dest    = var.network_config.cidr
-    source  = var.network_config.cidr
+    dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
+    source  = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
   }
 
-  # NodePort Services (optional)
+  # NodePort Services (optional) - using IPsets for admin access
   dynamic "rule" {
-    for_each = var.network_config.nodeport_range != null ? [1] : []
+    for_each = var.network_config.nodeport_range != null ? var.network_config.ipsets : {}
     content {
       type    = "in"
       action  = "ACCEPT"
-      comment = "NodePort services"
-      dest    = var.network_config.cidr
+      comment = "NodePort services - ${rule.key}"
+      dest    = "+${proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name}"
       dport   = var.network_config.nodeport_range
       proto   = "tcp"
-      source  = join(",", var.network_config.allowed_cidrs)
+      source  = "+${proxmox_virtual_environment_firewall_ipset.cluster[rule.key].name}"
     }
   }
 }

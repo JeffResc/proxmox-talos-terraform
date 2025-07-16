@@ -2,7 +2,8 @@
 
 # Proxmox connection
 proxmox_config = {
-  endpoint  = "https://192.168.1.100:8006/"
+  host      = "192.168.1.100"
+  port      = 8006
   api_token = "root@pam!terraform=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   insecure  = true
 
@@ -23,17 +24,17 @@ network_config = {
 
   # Create a new isolated Linux bridge
   create_bridge = true
-  bridge_name   = "vmbr100"         # Custom bridge name for the cluster
-  bridge_cidr   = "10.100.0.1/24"   # IP address for the bridge interface
-  bridge_ports  = []                 # No physical interfaces (isolated)
-  vlan_aware    = true               # Enable VLAN support
+  bridge_name   = "vmbr100"
+  bridge_cidr   = "10.100.0.1/24"
+  bridge_ports  = []
+  vlan_aware    = true
 
   # Optional: Create a VLAN for additional isolation
   vlan_id               = 100
   vlan_parent_interface = "eth0"
 
   # Resource pool for organization
-  resource_pool_id = "k8s-production"  # Custom pool name
+  resource_pool_id = "talos-dev"
 
   # Network settings
   mtu = 1500
@@ -41,11 +42,40 @@ network_config = {
   # Firewall configuration
   enable_firewall = true
   allowed_cidrs = [
-    "10.0.0.0/8",       # Allow from internal networks
-    "192.168.0.0/16",   # Allow from local networks
-    "203.0.113.5/32"    # Allow from specific external IP
+    "10.0.0.0/8",
+    "192.168.0.0/16",
+    "203.0.113.5/32"
   ]
   nodeport_range = "30000-32767"
+
+  # IPset configuration for organized network access control
+  ipsets = {
+    admin_networks = {
+      comment = "Administrative access networks"
+      cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]
+    }
+    external_partners = {
+      comment = "External partner access"
+      cidrs   = ["203.0.113.0/24", "198.51.100.0/24"]
+    }
+    monitoring = {
+      comment = "Monitoring and observability systems"
+      cidrs   = ["10.50.0.0/24"]
+    }
+  }
+
+  # VM-level firewall configuration
+  vm_firewall = {
+    enabled       = true     # Enable firewall on each VM
+    dhcp          = false    # Block DHCP traffic
+    ipfilter      = true     # Enable IP filter (anti-spoofing)
+    log_level_in  = "nolog"  # Input traffic log level
+    log_level_out = "nolog"  # Output traffic log level
+    macfilter     = false    # Disable MAC address filtering
+    ndp           = true     # Enable IPv6 NDP
+    input_policy  = "DROP"   # Default deny for incoming
+    output_policy = "ACCEPT" # Default allow for outgoing
+  }
 }
 
 # Cluster configuration

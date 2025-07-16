@@ -63,7 +63,7 @@ data "talos_machine_configuration" "controlplane" {
               stringData:
                 config.yaml: |
                   clusters:
-                    - url: "${trimsuffix(var.proxmox_config.endpoint, "/")}/api2/json"
+                    - url: "${trimsuffix(local.proxmox_endpoint, "/")}/api2/json"
                       insecure: ${var.proxmox_config.insecure}
                       token_id: "${local.ccm_token_id}"
                       token_secret: "${local.ccm_token_secret}"

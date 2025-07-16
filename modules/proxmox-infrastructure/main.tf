@@ -129,3 +129,32 @@ resource "proxmox_virtual_environment_vm" "nodes" {
     proxmox_virtual_environment_vm.template
   ]
 }
+
+# =============================================================================
+# VM FIREWALL OPTIONS
+# =============================================================================
+
+# Configure firewall options for each VM
+resource "proxmox_virtual_environment_firewall_options" "nodes" {
+  for_each = var.network_config.enable_firewall && var.network_config.vm_firewall.enabled ? local.nodes : {}
+
+  node_name = each.value.node
+  vm_id     = proxmox_virtual_environment_vm.nodes[each.key].vm_id
+
+  # Firewall settings
+  enabled       = var.network_config.vm_firewall.enabled
+  dhcp          = var.network_config.vm_firewall.dhcp
+  ipfilter      = var.network_config.vm_firewall.ipfilter
+  log_level_in  = var.network_config.vm_firewall.log_level_in
+  log_level_out = var.network_config.vm_firewall.log_level_out
+  macfilter     = var.network_config.vm_firewall.macfilter
+  ndp           = var.network_config.vm_firewall.ndp
+
+  # Default policies
+  input_policy  = var.network_config.vm_firewall.input_policy
+  output_policy = var.network_config.vm_firewall.output_policy
+
+  depends_on = [
+    proxmox_virtual_environment_vm.nodes
+  ]
+}

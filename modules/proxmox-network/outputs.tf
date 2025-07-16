@@ -28,6 +28,18 @@ output "security_group_name" {
   value       = var.network_config.enable_firewall ? "${var.cluster_config.name}-talos" : null
 }
 
+output "ipset_names" {
+  description = "Map of IPset names created for the cluster"
+  value = var.network_config.enable_firewall ? {
+    for k, v in proxmox_virtual_environment_firewall_ipset.cluster : k => v.name
+  } : {}
+}
+
+output "internal_ipset_name" {
+  description = "Internal cluster IPset name for node-to-node communication"
+  value       = var.network_config.enable_firewall ? proxmox_virtual_environment_firewall_ipset.cluster_internal[0].name : null
+}
+
 output "network_configuration" {
   description = "Complete network configuration for use by other modules"
   value = {
