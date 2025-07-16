@@ -35,6 +35,9 @@ resource "proxmox_virtual_environment_vm" "template" {
   template  = true
   tags      = concat(var.tagging_config.common, var.tagging_config.extra, [each.value.tag])
 
+  # Add to resource pool if network configuration is provided
+  pool_id = var.network_configuration != null ? var.network_configuration.resource_pool_id : null
+
   disk {
     datastore_id = var.proxmox_config.template_datastore_id
     file_id      = proxmox_virtual_environment_download_file.talos_image.id
@@ -53,7 +56,7 @@ resource "proxmox_virtual_environment_vm" "template" {
   }
 
   network_device {
-    bridge = var.network_config.bridge
+    bridge = var.network_configuration != null ? var.network_configuration.bridge_name : var.network_config.bridge
   }
 
   operating_system {
@@ -91,6 +94,9 @@ resource "proxmox_virtual_environment_vm" "nodes" {
   node_name = each.value.proxmox_node_name
   vm_id     = random_integer.node_vm_id[each.key].result
   tags      = concat(var.tagging_config.common, var.tagging_config.extra, [each.value.type])
+
+  # Add to resource pool if network configuration is provided
+  pool_id = var.network_configuration != null ? var.network_configuration.resource_pool_id : null
 
   clone {
     vm_id = proxmox_virtual_environment_vm.template[each.value.template_key].vm_id

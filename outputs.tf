@@ -87,3 +87,24 @@ output "proxmox_ccm_token" {
   value       = var.proxmox_config.ccm_config.enabled ? module.proxmox_ccm[0].ccm_token.value : null
   sensitive   = true
 }
+
+# Network module outputs
+output "resource_pool_id" {
+  description = "Resource pool ID for the cluster"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].resource_pool_id : null
+}
+
+output "network_bridge" {
+  description = "Network bridge used for the cluster"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].bridge_name : var.network_config.bridge
+}
+
+output "vlan_id" {
+  description = "VLAN ID if configured"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].vlan_id : null
+}
+
+output "security_group_name" {
+  description = "Firewall security group name if configured"
+  value       = length(module.proxmox_network) > 0 ? module.proxmox_network[0].security_group_name : null
+}

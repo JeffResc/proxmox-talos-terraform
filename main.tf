@@ -2,6 +2,16 @@
 # This file demonstrates how to use the Talos Proxmox modules together
 # All variables are available at the root level for easy customization
 
+# Proxmox Network Infrastructure (VPC-like networking)
+module "proxmox_network" {
+  source = "./modules/proxmox-network"
+  count  = var.network_config.create_bridge != false || var.network_config.resource_pool_id != null ? 1 : 0
+
+  cluster_config    = var.cluster_config
+  network_config    = var.network_config
+  node_distribution = var.node_distribution
+}
+
 # Proxmox Cloud Controller Manager
 module "proxmox_ccm" {
   source = "./modules/proxmox-ccm"
@@ -42,6 +52,9 @@ module "proxmox_infrastructure" {
   resource_config   = var.resource_config
   vm_id_ranges      = var.vm_id_ranges
   tagging_config    = var.tagging_config
+
+  # Network configuration from network module (if created)
+  network_configuration = length(module.proxmox_network) > 0 ? module.proxmox_network[0].network_configuration : null
 
   # Talos image configuration from bootstrap module
   talos_image_config = {

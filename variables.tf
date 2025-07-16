@@ -41,10 +41,45 @@ variable "network_config" {
     gateway     = string
     bridge      = optional(string, "vmbr0")
     interface   = optional(string, "eth0")
+
+    # VPC-like network settings
+    create_bridge = optional(bool, false)  # Create a new Linux bridge
+    bridge_name   = optional(string)       # Custom bridge name (auto-generated if not specified)
+    bridge_id     = optional(number, 100)  # Bridge ID if bridge_name not specified
+    bridge_cidr   = optional(string)       # CIDR for the bridge interface
+    bridge_ports  = optional(list(string)) # Physical interfaces to bridge
+    vlan_aware    = optional(bool, true)
+
+    # VLAN configuration
+    vlan_id               = optional(number) # Create VLAN if specified
+    vlan_parent_interface = optional(string, "eth0")
+
+    # Resource pool
+    resource_pool_id = optional(string) # Defaults to cluster name
+
+    # Network settings
+    mtu = optional(number, 1500)
+
+    # Firewall configuration
+    enable_firewall = optional(bool, false)
+    allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])
+    nodeport_range  = optional(string, "30000-32767")
   })
   validation {
     condition     = can(cidrhost(var.network_config.cidr, 0))
     error_message = "Network CIDR must be a valid CIDR notation."
+  }
+  validation {
+    condition     = var.network_config.bridge_cidr == null || can(cidrhost(var.network_config.bridge_cidr, 0))
+    error_message = "Bridge CIDR must be a valid CIDR notation if specified."
+  }
+  validation {
+    condition     = var.network_config.vlan_id == null || (var.network_config.vlan_id >= 1 && var.network_config.vlan_id <= 4094)
+    error_message = "VLAN ID must be between 1 and 4094."
+  }
+  validation {
+    condition     = var.network_config.mtu >= 68 && var.network_config.mtu <= 65535
+    error_message = "MTU must be between 68 and 65535."
   }
 }
 

@@ -4,21 +4,152 @@ Automated deployment of Talos Linux Kubernetes clusters on Proxmox Virtual Envir
 
 ## Features
 
-- **Modular Architecture**: Clean separation of concerns with three focused modules
+- **Modular Architecture**: Clean separation of concerns with focused modules
+- **VPC-like Networking**: Create isolated networks with Linux bridges, VLANs, and firewall rules
 - **Grouped Configuration**: Organized variable structure for better maintainability
 - **High Availability**: Support for multiple control plane nodes with Virtual IP
 - **Cloud Controller Manager**: Integrated Proxmox CCM for cloud-native features
 - **GitOps Ready**: Pre-configured with Flux CD manifests
 - **Monitoring Stack**: Prometheus Operator CRDs included
 - **Multi-Node Support**: Distribute VMs across multiple Proxmox nodes
+- **Resource Organization**: Automatic resource pool creation for cluster management
 
 ## Architecture
 
-This project uses a modular Terraform architecture with three main components:
+This project uses a modular Terraform architecture with four main components:
 
-1. **proxmox-ccm**: Manages Proxmox Cloud Controller Manager authentication
-2. **talos-bootstrap**: Handles Talos configuration and cluster bootstrapping
-3. **proxmox-infrastructure**: Creates VM templates and instances
+1. **proxmox-network**: Creates VPC-like isolated networks, VLANs, and resource pools
+2. **proxmox-ccm**: Manages Proxmox Cloud Controller Manager authentication
+3. **talos-bootstrap**: Handles Talos configuration and cluster bootstrapping
+4. **proxmox-infrastructure**: Creates VM templates and instances
+
+### High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph "Proxmox Cluster"
+        subgraph "Network Module"
+            RP[Resource Pool<br/>k8s-cluster]
+            LB[Linux Bridge<br/>vmbr100]
+            VLAN[VLAN 100<br/>Optional]
+            FW[Firewall Rules<br/>Security Group]
+        end
+
+        subgraph "Infrastructure Module"
+            TI[Talos Image<br/>Download]
+            VT[VM Templates<br/>Control/Worker]
+            subgraph "Resource Pool"
+                CP1[Control Plane 1<br/>10.100.0.20]
+                CP2[Control Plane 2<br/>10.100.0.21]
+                CP3[Control Plane 3<br/>10.100.0.22]
+                W1[Worker 1<br/>10.100.0.30]
+                W2[Worker 2<br/>10.100.0.31]
+                W3[Worker 3<br/>10.100.0.32]
+            end
+        end
+
+        subgraph "CCM Module"
+            CCM[Cloud Controller<br/>Manager Auth]
+            TOKEN[API Token<br/>Permissions]
+        end
+    end
+
+    subgraph "Talos Bootstrap"
+        MS[Machine Secrets]
+        TC[Talos Config]
+        KC[Kubeconfig]
+        VIP[Virtual IP<br/>10.100.0.10]
+    end
+
+    subgraph "External Access"
+        ADMIN[Admin Network<br/>10.0.0.0/8]
+        KUBECTL[kubectl/talosctl<br/>Clients]
+    end
+
+    TI --> VT
+    VT --> CP1
+    VT --> CP2
+    VT --> CP3
+    VT --> W1
+    VT --> W2
+    VT --> W3
+
+    LB --> CP1
+    LB --> CP2
+    LB --> CP3
+    LB --> W1
+    LB --> W2
+    LB --> W3
+
+    VLAN -.-> LB
+    FW --> LB
+
+    TC --> CP1
+    TC --> CP2
+    TC --> CP3
+    TC --> W1
+    TC --> W2
+    TC --> W3
+
+    VIP --> CP1
+    VIP --> CP2
+    VIP --> CP3
+
+    CCM --> TOKEN
+    TOKEN --> CP1
+    TOKEN --> CP2
+    TOKEN --> CP3
+
+    ADMIN --> FW
+    KUBECTL --> VIP
+    KUBECTL --> CP1
+
+    MS --> TC
+    TC --> KC
+
+    classDef network fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef vm fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef talos fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef external fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class RP,LB,VLAN,FW network
+    class CP1,CP2,CP3,W1,W2,W3,VT,TI vm
+    class MS,TC,KC,VIP,CCM,TOKEN talos
+    class ADMIN,KUBECTL external
+```
+
+### Module Relationships
+
+```mermaid
+graph LR
+    subgraph "Terraform Modules"
+        NET[proxmox-network]
+        CCM[proxmox-ccm]
+        INFRA[proxmox-infrastructure]
+        BOOT[talos-bootstrap]
+    end
+
+    subgraph "Outputs Flow"
+        NET -->|network_configuration| INFRA
+        BOOT -->|talos_image_config| INFRA
+        INFRA -->|node_endpoints| BOOT
+        CCM -->|ccm_token| BOOT
+    end
+
+    subgraph "Resources Created"
+        NET -->|Creates| BR[Bridge/VLAN]
+        NET -->|Creates| POOL[Resource Pool]
+        NET -->|Creates| SEC[Security Group]
+        CCM -->|Creates| AUTH[CCM Auth]
+        INFRA -->|Creates| VM[VMs]
+        BOOT -->|Configures| TALOS[Talos/K8s]
+    end
+
+    style NET fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style CCM fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style INFRA fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style BOOT fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+```
 
 ## Prerequisites
 
@@ -64,6 +195,16 @@ network_config = {
   gateway   = "192.168.100.1"
   bridge    = "vmbr0"
   interface = "eth0"
+
+  # Optional: Create isolated VPC-like network
+  create_bridge = true
+  bridge_name   = "vmbr100"  # Or use bridge_id for auto-naming
+  bridge_cidr   = "192.168.100.1/24"  # Bridge interface IP
+  vlan_id       = 100  # Optional: Create VLAN
+
+  # Firewall configuration
+  enable_firewall = true
+  allowed_cidrs   = ["10.0.0.0/8", "192.168.0.0/16"]
 }
 
 # Cluster configuration
@@ -155,6 +296,53 @@ The configuration uses grouped variables for better organization:
 
 ## Advanced Features
 
+### VPC-like Isolated Networking
+
+Create an isolated network environment similar to AWS VPC for your Talos cluster:
+
+```hcl
+network_config = {
+  # Basic network settings
+  cidr      = "10.100.0.0/24"
+  gateway   = "10.100.0.1"
+  interface = "eth0"
+
+  # Create a new isolated Linux bridge
+  create_bridge = true
+  bridge_name   = "vmbr100"        # Custom bridge name
+  bridge_cidr   = "10.100.0.1/24"  # IP address for the bridge interface
+  bridge_ports  = ["eth1"]         # Optional: Physical interfaces to bridge
+
+  # VLAN configuration (optional)
+  vlan_id               = 100
+  vlan_parent_interface = "eth0"
+
+  # Resource pool for organization
+  resource_pool_id = "talos-prod"  # Defaults to cluster name if not specified
+
+  # Firewall rules
+  enable_firewall = true
+  allowed_cidrs   = [
+    "10.0.0.0/8",      # Internal networks
+    "192.168.0.0/16",  # Local networks
+    "203.0.113.0/24"   # Specific external access
+  ]
+  nodeport_range = "30000-32767"
+}
+```
+
+This creates:
+- **Isolated Linux Bridge**: A dedicated network bridge for your cluster
+- **VLAN Segmentation**: Optional VLAN tagging for additional isolation
+- **Resource Pool**: Groups all cluster resources for easier management
+- **Firewall Rules**: Automatic security group with Kubernetes-specific ports
+
+The firewall automatically configures:
+- Kubernetes API access (port 6443)
+- Talos API access (port 50000)
+- Inter-node communication
+- NodePort services (customizable range)
+
 ### Multi-Node Proxmox Clusters
 
 Distribute your Kubernetes nodes across multiple Proxmox hosts:
@@ -219,6 +407,10 @@ Key outputs available after deployment:
 - `worker_nodes`: Worker node details
 - `talos_client_configuration`: Talos configuration for talosctl
 - `talos_cluster_kubeconfig`: Kubernetes configuration
+- `resource_pool_id`: Resource pool ID for the cluster
+- `network_bridge`: Network bridge used for the cluster
+- `vlan_id`: VLAN ID if configured
+- `security_group_name`: Firewall security group name
 
 ## Documentation
 
@@ -244,6 +436,7 @@ No providers.
 |------|--------|---------|
 | <a name="module_proxmox_ccm"></a> [proxmox\_ccm](#module\_proxmox\_ccm) | ./modules/proxmox-ccm | n/a |
 | <a name="module_proxmox_infrastructure"></a> [proxmox\_infrastructure](#module\_proxmox\_infrastructure) | ./modules/proxmox-infrastructure | n/a |
+| <a name="module_proxmox_network"></a> [proxmox\_network](#module\_proxmox\_network) | ./modules/proxmox-network | n/a |
 | <a name="module_talos_bootstrap"></a> [talos\_bootstrap](#module\_talos\_bootstrap) | ./modules/talos-bootstrap | n/a |
 
 ## Resources
@@ -255,7 +448,7 @@ No resources.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_cluster_config"></a> [cluster\_config](#input\_cluster\_config) | Cluster configuration settings | <pre>object({<br/>    name          = string<br/>    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos<br/>    vip = optional(object({<br/>      enabled = bool<br/>      ip      = optional(string)<br/>      }), {<br/>      enabled = true<br/>      ip      = null<br/>    })<br/>    endpoint_override = optional(string)<br/>  })</pre> | n/a | yes |
-| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/>  })</pre> | n/a | yes |
+| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/>    <br/>    # VPC-like network settings<br/>    create_bridge      = optional(bool, false)          # Create a new Linux bridge<br/>    bridge_name        = optional(string)               # Custom bridge name (auto-generated if not specified)<br/>    bridge_id          = optional(number, 100)          # Bridge ID if bridge_name not specified<br/>    bridge_cidr        = optional(string)               # CIDR for the bridge interface<br/>    bridge_ports       = optional(list(string))         # Physical interfaces to bridge<br/>    vlan_aware         = optional(bool, true)<br/>    <br/>    # VLAN configuration<br/>    vlan_id                = optional(number)           # Create VLAN if specified<br/>    vlan_parent_interface  = optional(string, "eth0")<br/>    <br/>    # Resource pool<br/>    resource_pool_id = optional(string)                 # Defaults to cluster name<br/>    <br/>    # Network settings<br/>    mtu = optional(number, 1500)<br/>    <br/>    # Firewall configuration<br/>    enable_firewall  = optional(bool, false)<br/>    allowed_cidrs    = optional(list(string), ["0.0.0.0/0"])<br/>    nodeport_range   = optional(string, "30000-32767")<br/>  })</pre> | n/a | yes |
 | <a name="input_node_config"></a> [node\_config](#input\_node\_config) | Node configuration for the cluster | <pre>object({<br/>    controlplane_count    = number<br/>    worker_count          = number<br/>    controlplane_ip_start = optional(number, 10)<br/>    worker_ip_start       = optional(number, 20)<br/>  })</pre> | <pre>{<br/>  "controlplane_count": 3,<br/>  "worker_count": 3<br/>}</pre> | no |
 | <a name="input_node_distribution"></a> [node\_distribution](#input\_node\_distribution) | Distribution of VMs across Proxmox nodes | <pre>map(object({<br/>    controlplane_count = number<br/>    worker_count       = number<br/>  }))</pre> | <pre>{<br/>  "pve": {<br/>    "controlplane_count": 3,<br/>    "worker_count": 3<br/>  }<br/>}</pre> | no |
 | <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    endpoint  = string<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/><br/>    ccm_config = optional(object({<br/>      enabled    = bool<br/>      user       = optional(string, "talos-ccm@pve")<br/>      role       = optional(string, "TalosCCM")<br/>      token_name = optional(string, "ccm-token")<br/>      privileges = optional(list(string), ["VM.Audit"])<br/>      }), {<br/>      enabled    = true<br/>      user       = "talos-ccm@pve"<br/>      role       = "TalosCCM"<br/>      token_name = "ccm-token"<br/>      privileges = ["VM.Audit"]<br/>    })<br/>  })</pre> | n/a | yes |
@@ -272,11 +465,15 @@ No resources.
 | <a name="output_controlplane_ips"></a> [controlplane\_ips](#output\_controlplane\_ips) | List of control plane IP addresses |
 | <a name="output_controlplane_nodes"></a> [controlplane\_nodes](#output\_controlplane\_nodes) | Control plane node information |
 | <a name="output_controlplane_template_id"></a> [controlplane\_template\_id](#output\_controlplane\_template\_id) | Control plane template VM ID |
+| <a name="output_network_bridge"></a> [network\_bridge](#output\_network\_bridge) | Network bridge used for the cluster |
 | <a name="output_proxmox_ccm_token"></a> [proxmox\_ccm\_token](#output\_proxmox\_ccm\_token) | Proxmox Cloud Controller Manager API token |
+| <a name="output_resource_pool_id"></a> [resource\_pool\_id](#output\_resource\_pool\_id) | Resource pool ID for the cluster |
+| <a name="output_security_group_name"></a> [security\_group\_name](#output\_security\_group\_name) | Firewall security group name if configured |
 | <a name="output_talos_client_configuration"></a> [talos\_client\_configuration](#output\_talos\_client\_configuration) | Complete Talos client configuration for ~/.talos/config |
 | <a name="output_talos_cluster_kubeconfig"></a> [talos\_cluster\_kubeconfig](#output\_talos\_cluster\_kubeconfig) | Talos cluster kubeconfig |
 | <a name="output_talos_image_id"></a> [talos\_image\_id](#output\_talos\_image\_id) | Talos image ID in Proxmox |
 | <a name="output_talos_machine_secrets"></a> [talos\_machine\_secrets](#output\_talos\_machine\_secrets) | Talos machine secrets (sensitive) |
+| <a name="output_vlan_id"></a> [vlan\_id](#output\_vlan\_id) | VLAN ID if configured |
 | <a name="output_worker_ips"></a> [worker\_ips](#output\_worker\_ips) | List of worker IP addresses |
 | <a name="output_worker_nodes"></a> [worker\_nodes](#output\_worker\_nodes) | Worker node information |
 | <a name="output_worker_template_id"></a> [worker\_template\_id](#output\_worker\_template\_id) | Worker template VM ID |

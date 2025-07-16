@@ -1,0 +1,100 @@
+# Example configuration using VPC-like isolated networking
+
+# Proxmox connection
+proxmox_config = {
+  endpoint  = "https://192.168.1.100:8006/"
+  api_token = "root@pam!terraform=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  insecure  = true
+
+  node_name = "pve"
+
+  # Enable Cloud Controller Manager
+  ccm_config = {
+    enabled = true
+  }
+}
+
+# Network configuration with VPC-like features
+network_config = {
+  # Basic network settings
+  cidr      = "10.100.0.0/24"
+  gateway   = "10.100.0.1"
+  interface = "eth0"
+
+  # Create a new isolated Linux bridge
+  create_bridge = true
+  bridge_name   = "vmbr100"         # Custom bridge name for the cluster
+  bridge_cidr   = "10.100.0.1/24"   # IP address for the bridge interface
+  bridge_ports  = []                 # No physical interfaces (isolated)
+  vlan_aware    = true               # Enable VLAN support
+
+  # Optional: Create a VLAN for additional isolation
+  vlan_id               = 100
+  vlan_parent_interface = "eth0"
+
+  # Resource pool for organization
+  resource_pool_id = "k8s-production"  # Custom pool name
+
+  # Network settings
+  mtu = 1500
+
+  # Firewall configuration
+  enable_firewall = true
+  allowed_cidrs = [
+    "10.0.0.0/8",       # Allow from internal networks
+    "192.168.0.0/16",   # Allow from local networks
+    "203.0.113.5/32"    # Allow from specific external IP
+  ]
+  nodeport_range = "30000-32767"
+}
+
+# Cluster configuration
+cluster_config = {
+  name          = "production"
+  talos_version = "v1.10.5"
+
+  # Virtual IP for HA control plane
+  vip = {
+    enabled = true
+    ip      = "10.100.0.10"  # VIP within the isolated network
+  }
+}
+
+# Node configuration
+node_config = {
+  controlplane_count    = 3
+  worker_count          = 5
+  controlplane_ip_start = 20  # First control plane: 10.100.0.20
+  worker_ip_start       = 30  # First worker: 10.100.0.30
+}
+
+# Distribute nodes across multiple Proxmox hosts
+node_distribution = {
+  "pve1" = {
+    controlplane_count = 1
+    worker_count       = 2
+  }
+  "pve2" = {
+    controlplane_count = 1
+    worker_count       = 2
+  }
+  "pve3" = {
+    controlplane_count = 1
+    worker_count       = 1
+  }
+}
+
+# Customize resources for production workloads
+resource_config = {
+  controlplane = {
+    memory    = 8192
+    cpu_cores = 4
+    disk_size = 50
+  }
+  worker = {
+    memory    = 32768
+    cpu_cores = 16
+    disk_size = 200
+  }
+  cpu_type = "host"  # Use host CPU type for best performance
+}

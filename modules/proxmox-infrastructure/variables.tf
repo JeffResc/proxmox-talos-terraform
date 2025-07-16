@@ -288,3 +288,20 @@ variable "tagging_config" {
     extra  = []
   }
 }
+
+# =============================================================================
+# NETWORK MODULE CONFIGURATION
+# =============================================================================
+
+variable "network_configuration" {
+  description = "Network configuration from the network module"
+  type = object({
+    resource_pool_id    = string
+    bridge_name         = string
+    vlan_id             = optional(number)
+    cidr                = string
+    gateway             = string
+    security_group_name = optional(string)
+  })
+  default = null
+}
