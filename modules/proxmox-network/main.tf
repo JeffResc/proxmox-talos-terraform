@@ -36,6 +36,44 @@ resource "proxmox_virtual_environment_network_linux_bridge" "cluster" {
 }
 
 # =============================================================================
+# POST-BRIDGE ROUTING CONFIGURATION
+# =============================================================================
+
+resource "null_resource" "configure_routing" {
+  for_each = var.network_config.create_bridge && var.network_config.enable_nat_gateway ? var.node_distribution : {}
+
+  triggers = {
+    bridge_name  = proxmox_virtual_environment_network_linux_bridge.cluster[each.key].name
+    network_cidr = var.network_config.cidr
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.proxmox_config.ssh_host != null ? var.proxmox_config.ssh_host : split(":", replace(var.proxmox_config.endpoint, "https://", ""))[0]
+    user        = var.proxmox_config.ssh_user
+    password    = var.proxmox_config.ssh_password
+    private_key = var.proxmox_config.ssh_private_key != null ? file(var.proxmox_config.ssh_private_key) : null
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      # Add route to access cluster network from Proxmox host
+      "ip route add ${var.network_config.cidr} dev ${self.triggers.bridge_name} || true",
+
+      # Make route persistent in /etc/network/interfaces
+      "grep -q 'up ip route add ${var.network_config.cidr}' /etc/network/interfaces || sed -i '/iface ${self.triggers.bridge_name}/a\\        up ip route add ${var.network_config.cidr} dev ${self.triggers.bridge_name}' /etc/network/interfaces",
+
+      # Reload networking to apply changes
+      "systemctl reload networking || true"
+    ]
+  }
+
+  depends_on = [
+    proxmox_virtual_environment_network_linux_bridge.cluster
+  ]
+}
+
+# =============================================================================
 # VLAN (Optional)
 # =============================================================================
 

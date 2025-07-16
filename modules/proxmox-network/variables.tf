@@ -16,6 +16,25 @@ variable "cluster_config" {
 }
 
 # =============================================================================
+# PROXMOX CONFIGURATION (for SSH access)
+# =============================================================================
+
+variable "proxmox_config" {
+  description = "Proxmox configuration including SSH access for routing setup"
+  type = object({
+    endpoint  = string
+    api_token = optional(string)
+    insecure  = optional(bool, false)
+
+    # SSH configuration for routing setup (optional)
+    ssh_host        = optional(string) # Defaults to endpoint host
+    ssh_user        = optional(string, "root")
+    ssh_password    = optional(string)
+    ssh_private_key = optional(string) # Path to SSH private key
+  })
+}
+
+# =============================================================================
 # NETWORK CONFIGURATION
 # =============================================================================
 
@@ -51,6 +70,9 @@ variable "network_config" {
     enable_firewall = optional(bool, true)
     allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])
     nodeport_range  = optional(string, "30000-32767")
+
+    # NAT Gateway configuration
+    enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT
   })
 
   validation {

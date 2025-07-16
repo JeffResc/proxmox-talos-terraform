@@ -12,6 +12,12 @@ variable "proxmox_config" {
 
     dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])
 
+    # SSH configuration for routing setup (optional)
+    ssh_host        = optional(string) # Defaults to endpoint host
+    ssh_user        = optional(string, "root")
+    ssh_password    = optional(string)
+    ssh_private_key = optional(string) # Path to SSH private key
+
     ccm_config = optional(object({
       enabled    = bool
       user       = optional(string, "talos-ccm@pve")
@@ -64,6 +70,9 @@ variable "network_config" {
     enable_firewall = optional(bool, false)
     allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])
     nodeport_range  = optional(string, "30000-32767")
+
+    # NAT Gateway configuration
+    enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT
   })
   validation {
     condition     = can(cidrhost(var.network_config.cidr, 0))

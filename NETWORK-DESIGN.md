@@ -2,13 +2,13 @@
 
 ## Overview
 
-This configuration creates an isolated VPC-like network for the Talos Kubernetes cluster using a 10.0.0.0/16 subnet, providing 65,534 usable IP addresses for future expansion.
+This configuration creates an isolated VPC-like network for the Talos Kubernetes cluster using a `10.0.0.0/16` subnet, providing `65534` usable IP addresses for future expansion.
 
 ## Network Architecture
 
 ### Address Space Allocation
 
-```
+```bash
 10.0.0.0/16 (65,534 hosts)
 ├── 10.0.0.1         - Gateway/Bridge Interface
 ├── 10.0.1.0/24      - Control Plane Subnet
@@ -25,33 +25,38 @@ This configuration creates an isolated VPC-like network for the Talos Kubernetes
 
 ### Network Components
 
-1. **Linux Bridge (vmbr100)**
+1. **Linux Bridge (`vmbr100`)**
+
    - Isolated from the main network
    - No physical interfaces attached (fully isolated)
    - VLAN-aware for future segmentation
 
-2. **Resource Pool**
+1. **Resource Pool**
+
    - Groups all cluster VMs together
    - Simplifies management and resource allocation
 
-3. **Firewall Rules**
-   - Kubernetes API (6443)
-   - Talos API (50000)
+1. **Firewall Rules**
+
+   - Kubernetes API (`6443`)
+   - Talos API (`50000`)
    - Inter-node communication
-   - NodePort services (30000-32767)
+   - NodePort services (`30000-32767`)
 
 ### Security Configuration
 
 - **Allowed Networks**:
-  - 10.0.0.0/8 - All private 10.x networks
-  - 192.168.0.0/16 - Local RFC1918 networks
+
+  - `10.0.0.0/8` - All private 10.x networks
+  - `192.168.0.0/16` - Local `RFC1918` networks
   - Additional IPs can be added as needed
 
 - **Default Deny**: All other traffic is blocked
 
 ### Future Expansion Options
 
-With a /16 network, you have plenty of room for:
+With a `/16` network, you have plenty of room for:
+
 - Multiple Kubernetes clusters
 - Different environments (dev, staging, prod)
 - Service subnets
@@ -61,6 +66,7 @@ With a /16 network, you have plenty of room for:
 ### VLAN Support
 
 The configuration is VLAN-aware, allowing future segmentation:
+
 - VLAN 100: Production cluster
 - VLAN 200: Development cluster
 - VLAN 300: Management traffic

@@ -9,6 +9,7 @@ module "proxmox_network" {
 
   cluster_config    = var.cluster_config
   network_config    = var.network_config
+  proxmox_config    = var.proxmox_config
   node_distribution = var.node_distribution
 }
 

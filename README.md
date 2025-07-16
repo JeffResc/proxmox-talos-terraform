@@ -19,9 +19,9 @@ Automated deployment of Talos Linux Kubernetes clusters on Proxmox Virtual Envir
 This project uses a modular Terraform architecture with four main components:
 
 1. **proxmox-network**: Creates VPC-like isolated networks, VLANs, and resource pools
-2. **proxmox-ccm**: Manages Proxmox Cloud Controller Manager authentication
-3. **talos-bootstrap**: Handles Talos configuration and cluster bootstrapping
-4. **proxmox-infrastructure**: Creates VM templates and instances
+1. **proxmox-ccm**: Manages Proxmox Cloud Controller Manager authentication
+1. **talos-bootstrap**: Handles Talos configuration and cluster bootstrapping
+1. **proxmox-infrastructure**: Creates VM templates and instances
 
 ### High-Level Architecture
 
@@ -183,6 +183,11 @@ proxmox_config = {
   vm_datastore_id               = "local-lvm"
   dns_servers                   = ["1.1.1.1", "8.8.8.8"]
 
+  # SSH configuration for automatic routing setup (optional)
+  # ssh_user        = "root"
+  # ssh_password    = "your-password"
+  # ssh_private_key = "~/.ssh/id_rsa"  # Recommended
+
   # Cloud Controller Manager configuration
   ccm_config = {
     enabled = true
@@ -201,6 +206,9 @@ network_config = {
   bridge_name   = "vmbr100"  # Or use bridge_id for auto-naming
   bridge_cidr   = "192.168.100.1/24"  # Bridge interface IP
   vlan_id       = 100  # Optional: Create VLAN
+
+  # NAT Gateway for internet access
+  enable_nat_gateway = true  # Auto-configure routing (requires SSH)
 
   # Firewall configuration
   enable_firewall = true
@@ -267,22 +275,26 @@ kubectl get pods -A
 The configuration uses grouped variables for better organization:
 
 #### `proxmox_config`
+
 - Connection settings (endpoint, API token)
 - Storage locations for images and VMs
 - DNS servers
 - Cloud Controller Manager settings
 
 #### `network_config`
+
 - CIDR and gateway configuration
 - Network bridge selection
 - Network interface naming
 
 #### `cluster_config`
+
 - Cluster name and Talos version
 - Virtual IP configuration for HA
 - Custom endpoint override options
 
 #### `node_config`
+
 - Number of control plane and worker nodes
 - IP address allocation settings
 
@@ -311,7 +323,11 @@ network_config = {
   create_bridge = true
   bridge_name   = "vmbr100"        # Custom bridge name
   bridge_cidr   = "10.100.0.1/24"  # IP address for the bridge interface
-  bridge_ports  = ["eth1"]         # Optional: Physical interfaces to bridge
+  bridge_ports  = []               # Empty = fully isolated (recommended)
+  # bridge_ports = ["eth1"]        # Bridge to physical interface (optional)
+
+  # Enable NAT gateway for internet access
+  enable_nat_gateway = true        # Requires SSH configuration
 
   # VLAN configuration (optional)
   vlan_id               = 100
@@ -332,16 +348,79 @@ network_config = {
 ```
 
 This creates:
+
 - **Isolated Linux Bridge**: A dedicated network bridge for your cluster
 - **VLAN Segmentation**: Optional VLAN tagging for additional isolation
 - **Resource Pool**: Groups all cluster resources for easier management
 - **Firewall Rules**: Automatic security group with Kubernetes-specific ports
 
 The firewall automatically configures:
+
 - Kubernetes API access (port 6443)
 - Talos API access (port 50000)
 - Inter-node communication
 - NodePort services (customizable range)
+
+#### NAT Gateway Configuration
+
+By default, isolated networks have no internet access. To enable outbound connectivity, you have two options:
+
+**Option 1: Automatic NAT Gateway** (Recommended)
+
+```hcl
+network_config = {
+  # ... other settings ...
+
+  # Enable automatic routing configuration
+  enable_nat_gateway = true
+}
+
+# Also configure SSH access in proxmox_config
+proxmox_config = {
+  # ... other settings ...
+
+  # SSH authentication (choose one)
+  ssh_user        = "root"
+  ssh_private_key = "~/.ssh/id_rsa"  # Recommended
+  # OR
+  ssh_password    = "your-password"
+}
+```
+
+This will automatically:
+
+1. Add routing on the Proxmox host after bridge creation
+1. Make the route persistent in `/etc/network/interfaces`
+1. Enable access from Proxmox host to the cluster network
+
+**Option 2: Manual NAT Configuration**
+
+If you prefer manual setup or don't want to provide SSH credentials:
+
+1. **Enable NAT on Proxmox host**:
+
+   ```bash
+   # Enable IP forwarding
+   echo 1 > /proc/sys/net/ipv4/ip_forward
+   echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+
+   # Add NAT masquerading
+   iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o vmbr0 -j MASQUERADE
+
+   # Save iptables rules
+   apt-get install iptables-persistent
+   netfilter-persistent save
+   ```
+
+1. **Add route for cluster access**:
+
+   ```bash
+   # Add route (after bridge exists)
+   ip route add 10.0.0.0/16 dev vmbr100
+
+   # Make persistent
+   echo "up ip route add 10.0.0.0/16 dev vmbr100" >> /etc/network/interfaces
+   ```
 
 ### Multi-Node Proxmox Clusters
 
@@ -417,7 +496,7 @@ Key outputs available after deployment:
 This project uses [terraform-docs](https://github.com/terraform-docs/terraform-docs) to generate documentation automatically.
 
 <!-- BEGIN_TF_DOCS -->
-## Requirements
+### Requirements
 
 | Name | Version |
 |------|---------|
@@ -426,11 +505,11 @@ This project uses [terraform-docs](https://github.com/terraform-docs/terraform-d
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.1 |
 | <a name="requirement_talos"></a> [talos](#requirement\_talos) | 0.8.1 |
 
-## Providers
+### Providers
 
 No providers.
 
-## Modules
+### Modules
 
 | Name | Source | Version |
 |------|--------|---------|
@@ -439,25 +518,25 @@ No providers.
 | <a name="module_proxmox_network"></a> [proxmox\_network](#module\_proxmox\_network) | ./modules/proxmox-network | n/a |
 | <a name="module_talos_bootstrap"></a> [talos\_bootstrap](#module\_talos\_bootstrap) | ./modules/talos-bootstrap | n/a |
 
-## Resources
+### Resources
 
 No resources.
 
-## Inputs
+### Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_cluster_config"></a> [cluster\_config](#input\_cluster\_config) | Cluster configuration settings | <pre>object({<br/>    name          = string<br/>    talos_version = optional(string, "v1.10.5") # renovate: datasource=github-releases depName=siderolabs/talos<br/>    vip = optional(object({<br/>      enabled = bool<br/>      ip      = optional(string)<br/>      }), {<br/>      enabled = true<br/>      ip      = null<br/>    })<br/>    endpoint_override = optional(string)<br/>  })</pre> | n/a | yes |
-| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/>    <br/>    # VPC-like network settings<br/>    create_bridge      = optional(bool, false)          # Create a new Linux bridge<br/>    bridge_name        = optional(string)               # Custom bridge name (auto-generated if not specified)<br/>    bridge_id          = optional(number, 100)          # Bridge ID if bridge_name not specified<br/>    bridge_cidr        = optional(string)               # CIDR for the bridge interface<br/>    bridge_ports       = optional(list(string))         # Physical interfaces to bridge<br/>    vlan_aware         = optional(bool, true)<br/>    <br/>    # VLAN configuration<br/>    vlan_id                = optional(number)           # Create VLAN if specified<br/>    vlan_parent_interface  = optional(string, "eth0")<br/>    <br/>    # Resource pool<br/>    resource_pool_id = optional(string)                 # Defaults to cluster name<br/>    <br/>    # Network settings<br/>    mtu = optional(number, 1500)<br/>    <br/>    # Firewall configuration<br/>    enable_firewall  = optional(bool, false)<br/>    allowed_cidrs    = optional(list(string), ["0.0.0.0/0"])<br/>    nodeport_range   = optional(string, "30000-32767")<br/>  })</pre> | n/a | yes |
+| <a name="input_network_config"></a> [network\_config](#input\_network\_config) | Network configuration for Talos nodes | <pre>object({<br/>    enable_dhcp = optional(bool, false)<br/>    cidr        = string<br/>    gateway     = string<br/>    bridge      = optional(string, "vmbr0")<br/>    interface   = optional(string, "eth0")<br/><br/>    # VPC-like network settings<br/>    create_bridge = optional(bool, false)  # Create a new Linux bridge<br/>    bridge_name   = optional(string)       # Custom bridge name (auto-generated if not specified)<br/>    bridge_id     = optional(number, 100)  # Bridge ID if bridge_name not specified<br/>    bridge_cidr   = optional(string)       # CIDR for the bridge interface<br/>    bridge_ports  = optional(list(string)) # Physical interfaces to bridge<br/>    vlan_aware    = optional(bool, true)<br/><br/>    # VLAN configuration<br/>    vlan_id               = optional(number) # Create VLAN if specified<br/>    vlan_parent_interface = optional(string, "eth0")<br/><br/>    # Resource pool<br/>    resource_pool_id = optional(string) # Defaults to cluster name<br/><br/>    # Network settings<br/>    mtu = optional(number, 1500)<br/><br/>    # Firewall configuration<br/>    enable_firewall = optional(bool, false)<br/>    allowed_cidrs   = optional(list(string), ["0.0.0.0/0"])<br/>    nodeport_range  = optional(string, "30000-32767")<br/><br/>    # NAT Gateway configuration<br/>    enable_nat_gateway = optional(bool, false) # Auto-configure routing for NAT<br/>  })</pre> | n/a | yes |
 | <a name="input_node_config"></a> [node\_config](#input\_node\_config) | Node configuration for the cluster | <pre>object({<br/>    controlplane_count    = number<br/>    worker_count          = number<br/>    controlplane_ip_start = optional(number, 10)<br/>    worker_ip_start       = optional(number, 20)<br/>  })</pre> | <pre>{<br/>  "controlplane_count": 3,<br/>  "worker_count": 3<br/>}</pre> | no |
 | <a name="input_node_distribution"></a> [node\_distribution](#input\_node\_distribution) | Distribution of VMs across Proxmox nodes | <pre>map(object({<br/>    controlplane_count = number<br/>    worker_count       = number<br/>  }))</pre> | <pre>{<br/>  "pve": {<br/>    "controlplane_count": 3,<br/>    "worker_count": 3<br/>  }<br/>}</pre> | no |
-| <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    endpoint  = string<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/><br/>    ccm_config = optional(object({<br/>      enabled    = bool<br/>      user       = optional(string, "talos-ccm@pve")<br/>      role       = optional(string, "TalosCCM")<br/>      token_name = optional(string, "ccm-token")<br/>      privileges = optional(list(string), ["VM.Audit"])<br/>      }), {<br/>      enabled    = true<br/>      user       = "talos-ccm@pve"<br/>      role       = "TalosCCM"<br/>      token_name = "ccm-token"<br/>      privileges = ["VM.Audit"]<br/>    })<br/>  })</pre> | n/a | yes |
+| <a name="input_proxmox_config"></a> [proxmox\_config](#input\_proxmox\_config) | Proxmox connection and infrastructure configuration | <pre>object({<br/>    endpoint  = string<br/>    api_token = string<br/>    insecure  = optional(bool, false)<br/><br/>    node_name                     = optional(string, "pve")<br/>    talos_disk_image_datastore_id = optional(string, "local")<br/>    template_datastore_id         = optional(string, "local-lvm")<br/>    vm_datastore_id               = optional(string, "local-lvm")<br/><br/>    dns_servers = optional(list(string), ["1.1.1.1", "8.8.8.8"])<br/><br/>    # SSH configuration for routing setup (optional)<br/>    ssh_host        = optional(string) # Defaults to endpoint host<br/>    ssh_user        = optional(string, "root")<br/>    ssh_password    = optional(string)<br/>    ssh_private_key = optional(string) # Path to SSH private key<br/><br/>    ccm_config = optional(object({<br/>      enabled    = bool<br/>      user       = optional(string, "talos-ccm@pve")<br/>      role       = optional(string, "TalosCCM")<br/>      token_name = optional(string, "ccm-token")<br/>      privileges = optional(list(string), ["VM.Audit"])<br/>      }), {<br/>      enabled    = true<br/>      user       = "talos-ccm@pve"<br/>      role       = "TalosCCM"<br/>      token_name = "ccm-token"<br/>      privileges = ["VM.Audit"]<br/>    })<br/>  })</pre> | n/a | yes |
 | <a name="input_resource_config"></a> [resource\_config](#input\_resource\_config) | VM resource allocation configuration | <pre>object({<br/>    controlplane = optional(object({<br/>      memory    = optional(number, 4096)<br/>      cpu_cores = optional(number, 4)<br/>      disk_size = optional(number, 20)<br/>    }), {})<br/>    worker = optional(object({<br/>      memory    = optional(number, 8192)<br/>      cpu_cores = optional(number, 8)<br/>      disk_size = optional(number, 50)<br/>    }), {})<br/>    cpu_type = optional(string, "x86-64-v2-AES")<br/>  })</pre> | `{}` | no |
 | <a name="input_tagging_config"></a> [tagging\_config](#input\_tagging\_config) | Tagging configuration for resources | <pre>object({<br/>    common = optional(list(string), ["talos", "terraform"])<br/>    extra  = optional(list(string), [])<br/>  })</pre> | <pre>{<br/>  "common": [<br/>    "talos",<br/>    "terraform"<br/>  ],<br/>  "extra": []<br/>}</pre> | no |
 | <a name="input_template_config"></a> [template\_config](#input\_template\_config) | VM template configuration | <pre>object({<br/>    controlplane_id = optional(number, 998)<br/>    worker_id       = optional(number, 999)<br/>    node            = optional(string, "pve")<br/>  })</pre> | `{}` | no |
 | <a name="input_vm_id_ranges"></a> [vm\_id\_ranges](#input\_vm\_id\_ranges) | VM ID ranges for different node types | <pre>object({<br/>    controlplane_min = optional(number, 2000)<br/>    controlplane_max = optional(number, 2999)<br/>    worker_min       = optional(number, 3000)<br/>    worker_max       = optional(number, 3999)<br/>  })</pre> | `{}` | no |
 
-## Outputs
+### Outputs
 
 | Name | Description |
 |------|-------------|
