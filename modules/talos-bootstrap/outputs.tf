@@ -35,5 +35,7 @@ output "image_factory_schematic_id" {
 
 output "talos_image_filename" {
   description = "Talos image filename"
-  value       = "${var.cluster_config.name}-${var.cluster_config.talos_version}-${talos_image_factory_schematic.this.id}-nocloud-amd64.qcow2"
+  # Proxmox has filename restrictions, so we need to keep it simple
+  # Use a shorter filename without special characters
+  value = "talos-${replace(var.cluster_config.talos_version, ".", "-")}-amd64.qcow2"
 }
