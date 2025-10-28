@@ -4,7 +4,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "registry.opentofu.org/bpg/proxmox"
-      version = "0.85.1"
+      version = "0.86.0"
     }
     talos = {
       source  = "registry.opentofu.org/siderolabs/talos"
