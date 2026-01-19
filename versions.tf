@@ -8,7 +8,7 @@ terraform {
     }
     talos = {
       source  = "registry.opentofu.org/siderolabs/talos"
-      version = "0.9.0"
+      version = "0.10.1"
     }
     random = {
       source  = "registry.opentofu.org/hashicorp/random"
